@@ -20,7 +20,7 @@ class Worker(QObject):
         print(f"路径: {self.paths}")
 
         #
-
+        self.success.emit(self.paths)
 
         self.finished.emit()
 
