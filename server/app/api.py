@@ -8,6 +8,10 @@ from typing import List, Dict
 from .models import TaskStatusResponse, DetailedComparisonResponse, ComparisonResultItem
 from .core import calculate_similarity, generate_detailed_diff
 
+import hashlib
+from .database import SessionLocal
+from .models import CodeSubmission
+
 # 模拟数据库/任务存储
 tasks_db: Dict[str, Dict] = {}
 
@@ -21,6 +25,25 @@ def run_check(task_id: str, files_content: Dict[str, str]):
     filenames = list(files_content.keys())
     results = []
     detailed_results = {}
+
+    # 将本次提交的代码存入数据库
+    db = SessionLocal()
+    try:
+        for filename, content in files_content.items():
+            # 计算哈希值
+            content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+            # 检查是否已存在
+            exists = db.query(CodeSubmission).filter(CodeSubmission.content_hash == content_hash).first()
+            if not exists:
+                db_submission = CodeSubmission(
+                    filename=filename,
+                    content=content,
+                    content_hash=content_hash
+                )
+                db.add(db_submission)
+        db.commit()
+    finally:
+        db.close()
 
     for i, (file1, file2) in enumerate(itertools.combinations(filenames, 2)):
         code1 = files_content[file1]
@@ -105,3 +128,66 @@ async def get_comparison_detail(result_id: str):
         raise HTTPException(status_code=404, detail="Comparison detail not found")
 
     return DetailedComparisonResponse(**detail)
+
+
+def run_check_one(task_id: str, new_filename: str, new_content: str):
+    """1对多查询的后台任务"""
+    db = SessionLocal()
+    try:
+        # 1. 获取所有历史代码
+        all_submissions = db.query(CodeSubmission).all()
+
+        results = []
+
+        # 2. 将新代码与每一条历史代码进行比较
+        for submission in all_submissions:
+            similarity = calculate_similarity(new_content, submission.content)
+            # 为了避免返回无意义的100%自身对比，可以加上哈希值判断
+            if new_filename == submission.filename and new_content == submission.content:
+                continue
+
+            results.append(
+                ComparisonResultItem(
+                    # 这里result_id的格式不重要，因为没有下一级详情
+                    result_id=f"one-to-many-{submission.id}",
+                    file1=new_filename,
+                    file2=submission.filename,
+                    similarity=similarity
+                )
+            )
+
+        # 3. 排序
+        results.sort(key=lambda x: x.similarity, reverse=True)
+
+        # 4. 更新任务状态
+        tasks_db[task_id]['status'] = 'completed'
+        tasks_db[task_id]['summary_results'] = results
+
+        # 5. 同时，也将这次用于查询的新代码存入历史库
+        content_hash = hashlib.sha256(new_content.encode('utf-8')).hexdigest()
+        exists = db.query(CodeSubmission).filter(CodeSubmission.content_hash == content_hash).first()
+        if not exists:
+            db_submission = CodeSubmission(filename=new_filename, content=new_content, content_hash=content_hash)
+            db.add(db_submission)
+            db.commit()
+
+    finally:
+        db.close()
+
+
+@router.post("/check_one", response_model=TaskStatusResponse, status_code=status.HTTP_202_ACCEPTED)
+async def start_one_to_many_check(
+        background_tasks: BackgroundTasks,
+        file: UploadFile = File(..., description="一份需要进行1对多查重的代码文件")
+):
+    """
+    接收一份代码，与历史库中所有代码进行比较。
+    """
+    task_id = str(uuid.uuid4())
+    content = (await file.read()).decode('utf-8')
+
+    tasks_db[task_id] = {"status": "processing", "summary_results": None}
+
+    background_tasks.add_task(run_check_one, task_id, file.filename, content)
+
+    return TaskStatusResponse(task_id=task_id, status="processing")

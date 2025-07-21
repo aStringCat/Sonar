@@ -1,6 +1,9 @@
 # main.py
 from fastapi import FastAPI
 from app.api import router
+from app.database import create_db_and_tables # 导入函数
+
+create_db_and_tables()
 
 app = FastAPI(
     title="Python 代码查重工具 API",
