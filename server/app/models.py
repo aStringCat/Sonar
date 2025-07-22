@@ -1,4 +1,3 @@
-# app/models.py
 from pydantic import BaseModel, Field
 from typing import List
 from sqlalchemy import Column, Integer, String, Text, DateTime
@@ -15,7 +14,7 @@ class CodeSubmission(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, index=True)
     content = Column(Text)
-    submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
+    submitted_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     # 增加一个哈希值用于快速去重，这是一个很好的实践
     content_hash = Column(String(64), unique=True, index=True)
 
