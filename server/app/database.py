@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base
+from .models import Base
 
 # 使用SQLite数据库，数据库文件将存放在项目根目录的 a.db 文件中
 DATABASE_URL = "sqlite:///./a.db"

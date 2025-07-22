@@ -1,7 +1,7 @@
 import difflib
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from models import FileDetail, CodeLine
+from .models import FileDetail, CodeLine
 
 
 def calculate_similarity(code1: str, code2: str) -> float:

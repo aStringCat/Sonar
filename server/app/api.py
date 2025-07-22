@@ -3,12 +3,11 @@ import itertools
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, status
 from typing import List, Dict
 
-from .models import TaskStatusResponse, DetailedComparisonResponse, ComparisonResultItem
+from .models import TaskStatusResponse, DetailedComparisonResponse, ComparisonResultItem, CodeSubmission
 from .core import calculate_similarity, generate_detailed_diff
+from .database import SessionLocal
 
 import hashlib
-from .database import SessionLocal
-from .models import CodeSubmission
 
 # 模拟数据库/任务存储
 tasks_db: Dict[str, Dict] = {}

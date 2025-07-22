@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List
 from sqlalchemy import Column, Integer, String, Text, DateTime
-from sqlalchemy.orm import declarative_base # Corrected import
+from sqlalchemy.orm import declarative_base
 import datetime
 
 # --- SQLAlchemy Models ---
