@@ -50,7 +50,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         help_menu.addAction(about_action)
 
     def _setup_results_table(self):
-        # 这部分代码保持不变
         self.table_history.setColumnCount(3)
         self.table_history.setHorizontalHeaderLabels(["文件1", "文件2", "相似度"])
         self.table_history.setColumnWidth(0, 250)
@@ -58,7 +57,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_history.setColumnWidth(2, 100)
 
     def connect_signals(self):
-        # 这部分代码保持不变
         self.pushButton.clicked.connect(lambda: self.change_mode(0))
         self.pushButton_2.clicked.connect(lambda: self.change_mode(1))
         self.btn_select_folder.clicked.connect(self.select_pairwise_directory)
@@ -148,7 +146,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(list)
     def on_analysis_success(self, results):
-        # 这部分代码保持不变
         self.statusbar.showMessage(f"分析完成！找到 {len(results)} 个相似对。", 5000)
         self.populate_results_table(results)
         self.go_to_dashboard_page()
@@ -157,7 +154,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(str)
     def on_analysis_error(self, error_message):
-        # 这部分代码保持不变
         QMessageBox.critical(self, "分析出错", error_message)
         self.statusbar.showMessage(f"分析出错。", 5000)
         self.btn_start_analysis_mode1.setEnabled(True)
