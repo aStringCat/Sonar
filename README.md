@@ -79,29 +79,3 @@ A `run.sh` script is provided to simplify the launch process.
 1.  **Save the Script:** Save the content below as `run.sh` in the project's root directory.
 2.  **Grant Permissions:** In your terminal, run `chmod +x run.sh`.
 3.  **Execute the Script:** Run `./run.sh` to start the entire application.
-
-> ### `run.sh`
->
-> ```bash
-> #!/bin/bash
->
-> # Script Title
-> echo "--- 🛰️ Starting Sonar Code Similarity Detector ---"
->
-> # Set Paths
-> BACKEND_DIR="./server"
-> FRONTEND_DIR="./client"
->
-> # Launch the FastAPI Backend in a new Terminal window
-> echo "-> ⚙️ Starting Backend Server..."
-> osascript -e "tell app \"Terminal\" to do script \"cd '$(pwd)/$BACKEND_DIR' && uvicorn main:app --reload\""
->
-> # Wait for the server to start
-> sleep 3
->
-> # Launch the PyQt6 Frontend in another new Terminal window
-> echo "-> 🖥️ Launching Frontend Application..."
-> osascript -e "tell app \"Terminal\" to do script \"cd '$(pwd)/$FRONTEND_DIR' && python3 main.py\""
->
-> echo "--- ✅ Application is running successfully ---"
-> ```
