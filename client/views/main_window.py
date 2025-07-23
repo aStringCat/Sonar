@@ -4,14 +4,14 @@ from PyQt6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QTableWidgetI
 from PyQt6.QtCore import QThread, pyqtSlot
 from PyQt6.QtGui import QAction
 
-from client.ui.main_window_ui import Ui_MainWindow
+from client.ui.main_window_ui import UiMainWindow
 from client.threads.worker import AnalysisWorker
 
 
-class MainWindow(QMainWindow, Ui_MainWindow):
+class MainWindow(QMainWindow, UiMainWindow):
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
+        self.setup_ui(self)
         self.setWindowTitle("Sonar - Code Plagiarism Detection")
 
         self._create_menu_bar()
@@ -26,26 +26,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _create_menu_bar(self):
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("文件")
-        start_pairwise_action = QAction("开始两两互查...", self)
+        start_pairwise_action: QAction = QAction("开始两两互查...", self)
         start_pairwise_action.triggered.connect(self.select_pairwise_directory)
         file_menu.addAction(start_pairwise_action)
-        start_one_to_many_action = QAction("开始一对多查重...", self)
+        start_one_to_many_action: QAction = QAction("开始一对多查重...", self)
         start_one_to_many_action.triggered.connect(self.select_one_to_many_file)
         file_menu.addAction(start_one_to_many_action)
         file_menu.addSeparator()
-        exit_action = QAction("退出", self)
+        exit_action: QAction = QAction("退出", self)
         exit_action.setShortcut("Cmd+Q")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         view_menu = menu_bar.addMenu("视图")
-        go_home_action = QAction("回到主页", self)
+        go_home_action: QAction = QAction("回到主页", self)
         go_home_action.triggered.connect(self.go_to_home_page)
         view_menu.addAction(go_home_action)
-        go_dashboard_action = QAction("查看查重看板", self)
+        go_dashboard_action: QAction = QAction("查看查重看板", self)
         go_dashboard_action.triggered.connect(self.go_to_dashboard_page)
         view_menu.addAction(go_dashboard_action)
         help_menu = menu_bar.addMenu("帮助")
-        about_action = QAction("关于 Sonar", self)
+        about_action: QAction = QAction("关于 Sonar", self)
         about_action.triggered.connect(self._show_about_dialog)
         help_menu.addAction(about_action)
 
@@ -129,7 +129,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_start_analysis_mode1.setEnabled(False)
         self.btn_start_analysis_mode2.setEnabled(False)
 
-        self.thread = QThread()
+        self.thread: QThread = QThread()
         # 创建 Worker 时不再需要传递 api_client
         worker = AnalysisWorker(file_paths)
         worker.moveToThread(self.thread)
@@ -174,7 +174,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def go_to_dashboard_page(self):
         self.main_stack.setCurrentIndex(1)
 
-    def go_to_details_page(self, row, column):
+    def go_to_details_page(self, row, _column):
         file1 = self.table_history.item(row, 0).text()
         file2 = self.table_history.item(row, 1).text()
         QMessageBox.information(self, "详情", f"您选择了查看 {file1} 和 {file2} 的详细对比。\n（此处将加载详细对比页面）")

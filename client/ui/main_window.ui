@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Python 代码查重工具</string>
   </property>
-  <widget class="QWidget" name="centralwidget">
+  <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_8">
     <item>
      <widget class="QStackedWidget" name="main_stack">
