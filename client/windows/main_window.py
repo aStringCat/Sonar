@@ -1,29 +1,8 @@
 from PyQt6.QtWidgets import QMainWindow, QMessageBox, QFileDialog
-from PyQt6.QtCore import QThread, QObject, pyqtSignal, pyqtSlot, QTimer
+from PyQt6.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
 import datetime
-from main_window_ui import Ui_MainWindow
-
-class Worker(QObject):
-    finished = pyqtSignal()
-    success = pyqtSignal(list)  # 假设成功后返回一个结果列表，还没写
-    error = pyqtSignal(str)
-
-    def __init__(self, mode, paths):
-        super().__init__()
-        self.mode = mode
-        self.paths = paths
-
-    @pyqtSlot()
-    def run(self):
-        print(f"开始执行查重任务...")
-        print(f"模式: {'两两互查' if self.mode == 0 else '一对多'}")
-        print(f"路径: {self.paths}")
-
-        #
-        self.success.emit(self.paths)
-
-        self.finished.emit()
-
+from client.ui.main_window_ui import Ui_MainWindow
+from client.threads.worker import Worker
 # --- Main_window ---
 class MainWindow(QMainWindow):
     def __init__(self):
