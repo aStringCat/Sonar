@@ -16,16 +16,13 @@ class MainWindow(QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        # ###################### 2. 新增无边框窗口设置 ######################
-        # 这会移除原生的标题栏和边框
+
+        # 移除原生的标题栏和边框
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        # 让窗口背景透明，这样我们用QSS设置的圆角才能正确显示
+        # 让窗口背景透明
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-
         # 初始化一个用于窗口拖动的变量
         self._drag_start_pos = None
-        # #################################################################
 
         self.connect_signals()
         self.display_login_time()
@@ -161,37 +158,26 @@ class MainWindow(QMainWindow):
 
 
     def toggle_maximize_restore(self):
-        """切换窗口最大化和正常状态，并更新图标"""
+
         if self.isMaximized():
             self.showNormal()
             self.maximize_button.setIcon(qta.icon('fa5s.window-maximize', color='#A3A4A8'))
         else:
             self.showMaximized()
             self.maximize_button.setIcon(qta.icon('fa5s.window-restore', color='#A3A4A8'))
-    # ################################################################################
 
-    # ###################### 5. 新增三个鼠标事件函数，以实现窗口拖动 ######################
     def mousePressEvent(self, event):
-        """鼠标按下事件"""
-        # 检查是否是鼠标左键按下，并且窗口没有最大化
         if event.button() == QtCore.Qt.LeftButton and self.isMaximized() == False:
-            # 设置一个标志位，表示拖动开始
             self.m_flag = True
-            # 获取鼠标相对于窗口左上角的位置
             self.m_Position = event.globalPos() - self.pos()
             event.accept()
 
     def mouseMoveEvent(self, mouse_event):
-        """鼠标移动事件"""
-        # 如果是鼠标左键按住，并且拖动标志位为True
         if QtCore.Qt.LeftButton and self.m_flag:
-            # 更改窗口位置
             self.move(mouse_event.globalPos() - self.m_Position)
             mouse_event.accept()
 
     def mouseReleaseEvent(self, mouse_event):
-        """鼠标松开事件"""
-        # 重置拖动标志位
         self.m_flag = False
 
     def toggle_maximize_restore(self):
@@ -199,21 +185,11 @@ class MainWindow(QMainWindow):
         切换窗口的最大化和正常尺寸状态。
         """
         if self.isMaximized():
-            # 如果当前是最大化状态，就恢复正常尺寸
             self.showNormal()
-
         else:
-            # 如果当前是正常尺寸，就最大化窗口
+
             self.showMaximized()
 
     def _setup_window_icons(self):
-        """
-        为自定义标题栏的按钮设置初始图标。
-        """
-        # 注意：这里的 'A3A4A8' 是一个灰色，你可以根据喜好修改颜色
-        # 我们使用你UI文件中的控件命名：pushButton_4, pushButton_5, pushButton_6
         self.ui.pushButton_4.setIcon(qta.icon('fa5s.window-minimize', color='#A3A4A8'))
-        self.ui.pushButton_5.setIcon(qta.icon('fa5s.window-maximize', color='#A3A4A8'))
         self.ui.pushButton_6.setIcon(qta.icon('fa5s.times', color='#A3A4A8'))
-
-        # 你也可以在这里设置一下按钮的提示文字，鼠标放上去会显示
