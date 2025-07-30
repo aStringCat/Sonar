@@ -13,11 +13,327 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(792, 600)
+        MainWindow.setStyleSheet("#centralwidget {\n"
+"    background-color: transparent;\n"
+"}\n"
+"\n"
+"/*\n"
+" * 第二步：为你真正的最外层容器（那个名为 frame 的 QFrame）设置背景色和圆角。\n"
+" * 现在，由于底板是透明的，frame 的圆角就能完美地呈现为整个窗口的圆角。\n"
+"*/\n"
+"#frame {\n"
+"    background-color: #2E2F33; /* 你想要的窗口主背景色 */\n"
+"    border-radius: 10px;       /* 你想要的圆角弧度 */\n"
+"}")
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
+        self.centralwidget.setStyleSheet("")
         self.centralwidget.setObjectName("centralwidget")
-        self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.horizontalLayout_14 = QtWidgets.QHBoxLayout(self.centralwidget)
+        self.horizontalLayout_14.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_14.setSpacing(0)
+        self.horizontalLayout_14.setObjectName("horizontalLayout_14")
+        self.frame = QtWidgets.QFrame(parent=self.centralwidget)
+        self.frame.setStyleSheet("")
+        self.frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame.setObjectName("frame")
+        self.horizontalLayout_13 = QtWidgets.QHBoxLayout(self.frame)
+        self.horizontalLayout_13.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_13.setSpacing(0)
+        self.horizontalLayout_13.setObjectName("horizontalLayout_13")
+        self.frame_2 = QtWidgets.QFrame(parent=self.frame)
+        self.frame_2.setStyleSheet("#frame_2{\n"
+"    border-top-left-radius: 8px;     /* 只设置左上角的圆角半径 */\n"
+"    border-bottom-left-radius: 8px;  /* 只设置左下角的圆角半径 */\n"
+"background-color: rgb(0, 170, 255)\n"
+"}\n"
+"\n"
+"\n"
+"#label {\n"
+"    color: rgb(255, 255, 255);\n"
+"}\n"
+"\n"
+"#frame_2 QPushButton {\n"
+"    color: rgb(255, 255, 255);\n"
+"    background-color: rgb(0, 170, 255);\n"
+"    border: none;\n"
+"}\n"
+"\n"
+"\n"
+"#frame_8 QPushButton:hover {\n"
+"    background-color: #DCDCDC !important;\n"
+"    border-color: #B0B0B0 !important;\n"
+"}\n"
+"#frame_9 QPushButton:hover {\n"
+"    background-color: #DCDCDC !important;\n"
+"    border-color: #B0B0B0 !important;\n"
+"}\n"
+"\n"
+"")
+        self.frame_2.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_2.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_2.setObjectName("frame_2")
+        self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.frame_2)
+        self.verticalLayout_12.setObjectName("verticalLayout_12")
+        self.frame_10 = QtWidgets.QFrame(parent=self.frame_2)
+        self.frame_10.setStyleSheet("background-color: rgb(0, 170, 255)")
+        self.frame_10.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_10.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_10.setObjectName("frame_10")
+        self.verticalLayout_11 = QtWidgets.QVBoxLayout(self.frame_10)
+        self.verticalLayout_11.setContentsMargins(7, 0, 0, 0)
+        self.verticalLayout_11.setSpacing(0)
+        self.verticalLayout_11.setObjectName("verticalLayout_11")
+        self.label = QtWidgets.QLabel(parent=self.frame_10)
+        self.label.setStyleSheet("font: 28pt \"华文琥珀\";")
+        self.label.setObjectName("label")
+        self.verticalLayout_11.addWidget(self.label)
+        self.verticalLayout_12.addWidget(self.frame_10)
+        self.frame_9 = QtWidgets.QFrame(parent=self.frame_2)
+        self.frame_9.setStyleSheet("background-color: rgb(0, 170, 255)")
+        self.frame_9.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_9.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_9.setObjectName("frame_9")
+        self.verticalLayout_10 = QtWidgets.QVBoxLayout(self.frame_9)
+        self.verticalLayout_10.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_10.setSpacing(0)
+        self.verticalLayout_10.setObjectName("verticalLayout_10")
+        self.pushButton_7 = QtWidgets.QPushButton(parent=self.frame_9)
+        self.pushButton_7.setStyleSheet("\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: rgb(80, 159, 255) !important;\n"
+"    border-color: rgb(0, 0, 0) !important;\n"
+"    font: 13pt \"幼圆\";\n"
+"}\n"
+"QPushButton {\n"
+"\n"
+"    font: 13pt \"幼圆\";\n"
+"}")
+        self.pushButton_7.setCheckable(True)
+        self.pushButton_7.setObjectName("pushButton_7")
+        self.verticalLayout_10.addWidget(self.pushButton_7)
+        self.verticalLayout_12.addWidget(self.frame_9)
+        self.frame_8 = QtWidgets.QFrame(parent=self.frame_2)
+        self.frame_8.setStyleSheet("background-color: rgb(0, 170, 255)")
+        self.frame_8.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_8.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_8.setObjectName("frame_8")
+        self.verticalLayout_9 = QtWidgets.QVBoxLayout(self.frame_8)
+        self.verticalLayout_9.setContentsMargins(0, 6, 0, 6)
+        self.verticalLayout_9.setSpacing(0)
+        self.verticalLayout_9.setObjectName("verticalLayout_9")
+        self.pushButton_3 = QtWidgets.QPushButton(parent=self.frame_8)
+        self.pushButton_3.setStyleSheet("\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: rgb(80, 159, 255) !important;\n"
+"    border-color: rgb(0, 0, 0) !important;\n"
+"    font: 13pt \"幼圆\";\n"
+"}\n"
+"QPushButton {\n"
+"\n"
+"    font: 13pt \"幼圆\";\n"
+"}")
+        self.pushButton_3.setCheckable(True)
+        self.pushButton_3.setObjectName("pushButton_3")
+        self.verticalLayout_9.addWidget(self.pushButton_3)
+        self.verticalLayout_12.addWidget(self.frame_8)
+        spacerItem = QtWidgets.QSpacerItem(20, 446, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
+        self.verticalLayout_12.addItem(spacerItem)
+        self.horizontalLayout_13.addWidget(self.frame_2)
+        self.frame_3 = QtWidgets.QFrame(parent=self.frame)
+        self.frame_3.setStyleSheet("    border-top-right-radius: 8px;     /* 只设置左上角的圆角半径 */\n"
+"    border-bottom-right-radius: 8px;  /* 只设置左下角的圆角半径 */\n"
+"background-color:rgb(255, 255, 255)\n"
+"")
+        self.frame_3.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_3.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_3.setObjectName("frame_3")
+        self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.frame_3)
+        self.verticalLayout_8.setContentsMargins(-1, 0, 0, -1)
         self.verticalLayout_8.setObjectName("verticalLayout_8")
-        self.main_stack = QtWidgets.QStackedWidget(parent=self.centralwidget)
+        self.frame_4 = QtWidgets.QFrame(parent=self.frame_3)
+        self.frame_4.setStyleSheet("/* 按钮 (QPushButton) */\n"
+" QPushButton {\n"
+"\n"
+"}\n"
+"\n"
+" QPushButton:hover {\n"
+"    background-color: #DCDCDC !important;\n"
+"    border-color: #B0B0B0 !important;\n"
+"}\n"
+"\n"
+" QPushButton:pressed {\n"
+"    background-color: #C8C8C8 !important;\n"
+"}\n"
+"\n"
+" QPushButton:disabled {\n"
+"    background-color: #F5F5F5 !important;\n"
+"    color: #A0A0A0 !important;\n"
+"    border-color: #E0E0E0 !important;\n"
+"}\n"
+"\n"
+"/* 强调按钮 (需要设置 \'primary\' 动态属性为 true) */\n"
+" QPushButton[primary=true] {\n"
+"    background-color: #3498DB !important;\n"
+"    color: #FFFFFF !important;\n"
+"    border: none !important;\n"
+"}\n"
+" QPushButton[primary=true]:hover {\n"
+"    background-color: #4A90E2 !important;\n"
+"}\n"
+" QPushButton[primary=true]:pressed {\n"
+"    background-color: #2980B9 !important;\n"
+"}")
+        self.frame_4.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_4.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_4.setObjectName("frame_4")
+        self.horizontalLayout_18 = QtWidgets.QHBoxLayout(self.frame_4)
+        self.horizontalLayout_18.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_18.setSpacing(0)
+        self.horizontalLayout_18.setObjectName("horizontalLayout_18")
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_18.addItem(spacerItem1)
+        self.frame_5 = QtWidgets.QFrame(parent=self.frame_4)
+        self.frame_5.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_5.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_5.setObjectName("frame_5")
+        self.horizontalLayout_12 = QtWidgets.QHBoxLayout(self.frame_5)
+        self.horizontalLayout_12.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_12.setSpacing(0)
+        self.horizontalLayout_12.setObjectName("horizontalLayout_12")
+        self.pushButton_4 = QtWidgets.QPushButton(parent=self.frame_5)
+        self.pushButton_4.setStyleSheet("")
+        self.pushButton_4.setText("")
+        self.pushButton_4.setObjectName("pushButton_4")
+        self.horizontalLayout_12.addWidget(self.pushButton_4)
+        self.horizontalLayout_18.addWidget(self.frame_5)
+        self.frame_6 = QtWidgets.QFrame(parent=self.frame_4)
+        self.frame_6.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_6.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_6.setObjectName("frame_6")
+        self.horizontalLayout_16 = QtWidgets.QHBoxLayout(self.frame_6)
+        self.horizontalLayout_16.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_16.setSpacing(0)
+        self.horizontalLayout_16.setObjectName("horizontalLayout_16")
+        self.pushButton_5 = QtWidgets.QPushButton(parent=self.frame_6)
+        self.pushButton_5.setStyleSheet("")
+        self.pushButton_5.setText("")
+        self.pushButton_5.setObjectName("pushButton_5")
+        self.horizontalLayout_16.addWidget(self.pushButton_5)
+        self.horizontalLayout_18.addWidget(self.frame_6)
+        self.frame_7 = QtWidgets.QFrame(parent=self.frame_4)
+        self.frame_7.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_7.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_7.setObjectName("frame_7")
+        self.horizontalLayout_17 = QtWidgets.QHBoxLayout(self.frame_7)
+        self.horizontalLayout_17.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_17.setSpacing(0)
+        self.horizontalLayout_17.setObjectName("horizontalLayout_17")
+        self.pushButton_6 = QtWidgets.QPushButton(parent=self.frame_7)
+        self.pushButton_6.setStyleSheet("    border-top-right-radius: 10px;  \n"
+"")
+        self.pushButton_6.setText("")
+        self.pushButton_6.setObjectName("pushButton_6")
+        self.horizontalLayout_17.addWidget(self.pushButton_6)
+        spacerItem2 = QtWidgets.QSpacerItem(5, 20, QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_17.addItem(spacerItem2)
+        self.horizontalLayout_18.addWidget(self.frame_7)
+        self.verticalLayout_8.addWidget(self.frame_4)
+        self.main_stack = QtWidgets.QStackedWidget(parent=self.frame_3)
+        self.main_stack.setStyleSheet("/*================================================================\n"
+" *\n"
+" * 局部样式 - main_stack 内部的 \"白色主题\" (最终修正版)\n"
+" *\n"
+" * 说明:\n"
+" * - 使用 !important 强制背景色生效，解决优先级问题。\n"
+" * - 调整了按钮颜色，使其在白色背景上更突出。\n"
+" *\n"
+" =================================================================*/\n"
+"\n"
+"/* 1. 设置 main_stack 容器本身的基础样式 */\n"
+"#main_stack {\n"
+"    background-color: #FFFFFF;\n"
+"    color: #333333;\n"
+"    border: none;\n"
+"}\n"
+"\n"
+"/* 2. 设置 main_stack 内部具体控件的样式 */\n"
+"\n"
+"/* 标签 (QLabel) */\n"
+"#main_stack QLabel {\n"
+"    background-color: transparent;\n"
+"    color: #333333;\n"
+"}\n"
+"\n"
+"/* 按钮 (QPushButton) */\n"
+"#main_stack QPushButton {\n"
+"    background-color: #EAEAEA !important; /* 使用更明显的灰色，并强制生效 */\n"
+"    color: #333333 !important; /* 强制黑色文字 */\n"
+"    border: 1px solid #C0C0C0 !important; /* 强制边框样式 */\n"
+"    padding: 8px 16px;\n"
+"    border-radius: 4px;\n"
+"    min-height: 20px;\n"
+"}\n"
+"\n"
+"#main_stack QPushButton:hover {\n"
+"    background-color: #DCDCDC !important;\n"
+"    border-color: #B0B0B0 !important;\n"
+"}\n"
+"\n"
+"#main_stack QPushButton:pressed {\n"
+"    background-color: #C8C8C8 !important;\n"
+"}\n"
+"\n"
+"#main_stack QPushButton:disabled {\n"
+"    background-color: #F5F5F5 !important;\n"
+"    color: #A0A0A0 !important;\n"
+"    border-color: #E0E0E0 !important;\n"
+"}\n"
+"\n"
+"/* 强调按钮 (需要设置 \'primary\' 动态属性为 true) */\n"
+"#main_stack QPushButton[primary=true] {\n"
+"    background-color: #3498DB !important;\n"
+"    color: #FFFFFF !important;\n"
+"    border: none !important;\n"
+"}\n"
+"#main_stack QPushButton[primary=true]:hover {\n"
+"    background-color: #4A90E2 !important;\n"
+"}\n"
+"#main_stack QPushButton[primary=true]:pressed {\n"
+"    background-color: #2980B9 !important;\n"
+"}\n"
+"\n"
+"\n"
+"/* 单行输入框 (QLineEdit) */\n"
+"#main_stack QLineEdit {\n"
+"    background-color: #FFFFFF;\n"
+"    color: #333333;\n"
+"    border: 1px solid #C0C0C0;\n"
+"    border-radius: 4px;\n"
+"    padding: 6px;\n"
+"}\n"
+"\n"
+"#main_stack QLineEdit:focus {\n"
+"    border: 1px solid #3498DB;\n"
+"}\n"
+"\n"
+"/* 分组框 (QGroupBox) */\n"
+"#main_stack QGroupBox {\n"
+"    border: 1px solid #E0E0E0;\n"
+"    border-radius: 4px;\n"
+"    margin-top: 10px;\n"
+"    background-color: transparent;\n"
+"}\n"
+"\n"
+"#main_stack QGroupBox::title {\n"
+"    subcontrol-origin: margin;\n"
+"    subcontrol-position: top left;\n"
+"    padding: 0 5px;\n"
+"    left: 10px;\n"
+"    color: #333333;\n"
+"}")
         self.main_stack.setMidLineWidth(1)
         self.main_stack.setObjectName("main_stack")
         self.page = QtWidgets.QWidget()
@@ -39,6 +355,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_8.addLayout(self.horizontalLayout_7)
         self.verticalLayout_7.addWidget(self.groupBox_2)
         self.stackedWidget = QtWidgets.QStackedWidget(parent=self.page)
+        self.stackedWidget.setStyleSheet("")
         self.stackedWidget.setObjectName("stackedWidget")
         self.each_other_page = QtWidgets.QWidget()
         self.each_other_page.setObjectName("each_other_page")
@@ -64,13 +381,13 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addLayout(self.horizontalLayout)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem)
+        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem3)
         self.btn_start_analysis_mode1 = QtWidgets.QPushButton(parent=self.groupBox)
         self.btn_start_analysis_mode1.setObjectName("btn_start_analysis_mode1")
         self.horizontalLayout_3.addWidget(self.btn_start_analysis_mode1)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem1)
+        spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem4)
         self.verticalLayout_2.addLayout(self.horizontalLayout_3)
         self.verticalLayout.addWidget(self.groupBox)
         self.stackedWidget.addWidget(self.each_other_page)
@@ -112,17 +429,20 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.addLayout(self.horizontalLayout_11)
         self.horizontalLayout_10 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_10.setObjectName("horizontalLayout_10")
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_10.addItem(spacerItem2)
+        spacerItem5 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_10.addItem(spacerItem5)
         self.btn_start_analysis_mode2 = QtWidgets.QPushButton(parent=self.groupBox_3)
         self.btn_start_analysis_mode2.setObjectName("btn_start_analysis_mode2")
         self.horizontalLayout_10.addWidget(self.btn_start_analysis_mode2)
-        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_10.addItem(spacerItem3)
+        spacerItem6 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_10.addItem(spacerItem6)
         self.verticalLayout_4.addLayout(self.horizontalLayout_10)
         self.verticalLayout_6.addWidget(self.groupBox_3)
         self.stackedWidget.addWidget(self.one_to_many_page)
         self.verticalLayout_7.addWidget(self.stackedWidget)
+        self.label_2 = QtWidgets.QLabel(parent=self.page)
+        self.label_2.setObjectName("label_2")
+        self.verticalLayout_7.addWidget(self.label_2)
         self.table_history = QtWidgets.QTableWidget(parent=self.page)
         self.table_history.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table_history.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
@@ -135,18 +455,18 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.addWidget(self.table_history)
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
-        spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_5.addItem(spacerItem4)
+        spacerItem7 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_5.addItem(spacerItem7)
         self.pg_up_2 = QtWidgets.QPushButton(parent=self.page)
         self.pg_up_2.setObjectName("pg_up_2")
         self.horizontalLayout_5.addWidget(self.pg_up_2)
-        spacerItem5 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_5.addItem(spacerItem5)
+        spacerItem8 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_5.addItem(spacerItem8)
         self.pg_down_2 = QtWidgets.QPushButton(parent=self.page)
         self.pg_down_2.setObjectName("pg_down_2")
         self.horizontalLayout_5.addWidget(self.pg_down_2)
-        spacerItem6 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_5.addItem(spacerItem6)
+        spacerItem9 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_5.addItem(spacerItem9)
         self.verticalLayout_7.addLayout(self.horizontalLayout_5)
         self.label_login_time_2 = QtWidgets.QLabel(parent=self.page)
         self.label_login_time_2.setMidLineWidth(1)
@@ -162,8 +482,8 @@ class Ui_MainWindow(object):
         self.home = QtWidgets.QPushButton(parent=self.page_3)
         self.home.setObjectName("home")
         self.horizontalLayout_6.addWidget(self.home)
-        spacerItem7 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_6.addItem(spacerItem7)
+        spacerItem10 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_6.addItem(spacerItem10)
         self.verticalLayout_5.addLayout(self.horizontalLayout_6)
         self.chart_container = QtWidgets.QWidget(parent=self.page_3)
         self.chart_container.setObjectName("chart_container")
@@ -178,13 +498,13 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        spacerItem8 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_2.addItem(spacerItem8)
+        spacerItem11 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_2.addItem(spacerItem11)
         self.btn_back = QtWidgets.QPushButton(parent=self.page_2)
         self.btn_back.setObjectName("btn_back")
         self.horizontalLayout_2.addWidget(self.btn_back)
-        spacerItem9 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_2.addItem(spacerItem9)
+        spacerItem12 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_2.addItem(spacerItem12)
         self.verticalLayout_3.addLayout(self.horizontalLayout_2)
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
@@ -199,6 +519,10 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addLayout(self.horizontalLayout_4)
         self.main_stack.addWidget(self.page_2)
         self.verticalLayout_8.addWidget(self.main_stack)
+        self.horizontalLayout_13.addWidget(self.frame_3)
+        self.horizontalLayout_13.setStretch(0, 1)
+        self.horizontalLayout_13.setStretch(1, 5)
+        self.horizontalLayout_14.addWidget(self.frame)
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -212,6 +536,9 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Python 代码查重工具"))
+        self.label.setText(_translate("MainWindow", "Sonar"))
+        self.pushButton_7.setText(_translate("MainWindow", "代码查重"))
+        self.pushButton_3.setText(_translate("MainWindow", "历史记录"))
         self.groupBox_2.setTitle(_translate("MainWindow", "选择查重模式"))
         self.pushButton_2.setText(_translate("MainWindow", "一对多"))
         self.pushButton.setText(_translate("MainWindow", "文件夹内互查"))
@@ -225,6 +552,7 @@ class Ui_MainWindow(object):
         self.label_login_time_4.setText(_translate("MainWindow", "代码文件夹路径："))
         self.btn_select_folder_3.setText(_translate("MainWindow", "选择文件夹"))
         self.btn_start_analysis_mode2.setText(_translate("MainWindow", "开始分析"))
+        self.label_2.setText(_translate("MainWindow", "下面这个table是用来显示最近n条历史记录的"))
         self.pg_up_2.setText(_translate("MainWindow", "上一页"))
         self.pg_down_2.setText(_translate("MainWindow", "下一页"))
         self.label_login_time_2.setText(_translate("MainWindow", "登录时间："))
