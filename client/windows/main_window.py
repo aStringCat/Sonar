@@ -161,10 +161,10 @@ class MainWindow(QMainWindow):
 
         if self.isMaximized():
             self.showNormal()
-            self.maximize_button.setIcon(qta.icon('fa5s.window-maximize', color='#A3A4A8'))
+            self.ui.pushButton_5.setIcon(qta.icon('fa5s.window-maximize', color='#A3A4A8'))
         else:
             self.showMaximized()
-            self.maximize_button.setIcon(qta.icon('fa5s.window-restore', color='#A3A4A8'))
+            self.ui.pushButton_5.setIcon(qta.icon('fa5s.window-restore', color='#A3A4A8'))
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.isMaximized() == False:
@@ -193,3 +193,4 @@ class MainWindow(QMainWindow):
     def _setup_window_icons(self):
         self.ui.pushButton_4.setIcon(qta.icon('fa5s.window-minimize', color='#A3A4A8'))
         self.ui.pushButton_6.setIcon(qta.icon('fa5s.times', color='#A3A4A8'))
+        self.ui.pushButton_5.setIcon(qta.icon('fa5s.window-maximize', color='#A3A4A8'))

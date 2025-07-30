@@ -204,7 +204,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_12.setSpacing(0)
         self.horizontalLayout_12.setObjectName("horizontalLayout_12")
         self.pushButton_4 = QtWidgets.QPushButton(parent=self.frame_5)
-        self.pushButton_4.setStyleSheet("")
+        self.pushButton_4.setStyleSheet("    border-top-right-radius: 0px;     /* 只设置左上角的圆角半径 */\n"
+"    border-bottom-right-radius: 0px;  /* 只设置左下角的圆角半径 */")
         self.pushButton_4.setText("")
         self.pushButton_4.setObjectName("pushButton_4")
         self.horizontalLayout_12.addWidget(self.pushButton_4)
@@ -218,7 +219,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_16.setSpacing(0)
         self.horizontalLayout_16.setObjectName("horizontalLayout_16")
         self.pushButton_5 = QtWidgets.QPushButton(parent=self.frame_6)
-        self.pushButton_5.setStyleSheet("")
+        self.pushButton_5.setStyleSheet("    border-top-right-radius: 0px;     /* 只设置左上角的圆角半径 */\n"
+"    border-bottom-right-radius: 0px;  /* 只设置左下角的圆角半径 */")
         self.pushButton_5.setText("")
         self.pushButton_5.setObjectName("pushButton_5")
         self.horizontalLayout_16.addWidget(self.pushButton_5)
@@ -232,7 +234,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_17.setSpacing(0)
         self.horizontalLayout_17.setObjectName("horizontalLayout_17")
         self.pushButton_6 = QtWidgets.QPushButton(parent=self.frame_7)
-        self.pushButton_6.setStyleSheet("    border-top-right-radius: 10px;  \n"
+        self.pushButton_6.setStyleSheet("    border-top-right-radius: 8px;  \n"
 "")
         self.pushButton_6.setText("")
         self.pushButton_6.setObjectName("pushButton_6")

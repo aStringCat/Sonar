@@ -394,7 +394,8 @@ background-color:rgb(255, 255, 255)
                 <item>
                  <widget class="QPushButton" name="pushButton_4">
                   <property name="styleSheet">
-                   <string notr="true"/>
+                   <string notr="true">    border-top-right-radius: 0px;     /* 只设置左上角的圆角半径 */
+    border-bottom-right-radius: 0px;  /* 只设置左下角的圆角半径 */</string>
                   </property>
                   <property name="text">
                    <string/>
@@ -431,7 +432,8 @@ background-color:rgb(255, 255, 255)
                 <item>
                  <widget class="QPushButton" name="pushButton_5">
                   <property name="styleSheet">
-                   <string notr="true"/>
+                   <string notr="true">    border-top-right-radius: 0px;     /* 只设置左上角的圆角半径 */
+    border-bottom-right-radius: 0px;  /* 只设置左下角的圆角半径 */</string>
                   </property>
                   <property name="text">
                    <string/>
@@ -468,7 +470,7 @@ background-color:rgb(255, 255, 255)
                 <item>
                  <widget class="QPushButton" name="pushButton_6">
                   <property name="styleSheet">
-                   <string notr="true">    border-top-right-radius: 10px;  
+                   <string notr="true">    border-top-right-radius: 8px;  
 </string>
                   </property>
                   <property name="text">
