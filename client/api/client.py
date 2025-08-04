@@ -87,3 +87,13 @@ def get_task_status(task_id: str) -> Tuple[Dict[str, Any] | None, str | None]:
         return response.json(), None
     except requests.exceptions.RequestException as e:
         return None, f"获取任务状态失败: {e}"
+
+def get_comparison_details(result_id: str) -> Tuple[Dict[str, Any] | None, str | None]:
+    """根据结果ID获取详细的代码比对数据。"""
+    try:
+        with requests.Session() as session:
+            response = session.get(f"{BASE_URL}/comparison/{result_id}", timeout=10)
+            response.raise_for_status()
+        return response.json(), None
+    except requests.exceptions.RequestException as e:
+        return None, f"获取比对详情失败: {e}"
