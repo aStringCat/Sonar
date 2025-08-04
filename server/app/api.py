@@ -127,64 +127,52 @@ async def get_comparison_detail(result_id: str):
     return DetailedComparisonResponse(**detail)
 
 
-def run_check_one(task_id: str, new_filename: str, new_content: str):
-    """1对多查询的后台任务"""
-    db = SessionLocal()
-    try:
-        # 1. 获取所有历史代码
-        all_submissions = db.query(CodeSubmission).all()
+def run_one_to_many_check(task_id: str, base_filename: str, base_file_content: str, other_files_content: Dict[str, str]):
+    """
+    【已修改】后台运行的“一对多”查重函数。
+    比较一个基准文件和多个其他文件。
+    """
+    results = []
+    detailed_results = {}
 
-        results = []
+    # 遍历所有“其他文件”，逐一与基准文件比较
+    for i, (other_filename, other_content) in enumerate(other_files_content.items()):
+        similarity = calculate_similarity(base_file_content, other_content)
+        result_id = f"{task_id}-{i}"
 
-        # 2. 将新代码与每一条历史代码进行比较
-        for submission in all_submissions:
-            similarity = calculate_similarity(new_content, submission.content)
-            # 为了避免返回无意义的100%自身对比，可以加上哈希值判断
-            if new_filename == submission.filename and new_content == submission.content:
-                continue
+        results.append(
+            ComparisonResultItem(result_id=result_id, file1=base_filename, file2=other_filename, similarity=similarity)
+        )
+        detailed_results[result_id] = generate_detailed_diff(base_filename, base_file_content, other_filename, other_content)
 
-            results.append(
-                ComparisonResultItem(
-                    # 这里result_id的格式不重要，因为没有下一级详情
-                    result_id=f"one-to-many-{submission.id}",
-                    file1=new_filename,
-                    file2=submission.filename,
-                    similarity=similarity
-                )
-            )
+    results.sort(key=lambda x: x.similarity, reverse=True)
 
-        # 3. 排序
-        results.sort(key=lambda x: x.similarity, reverse=True)
-
-        # 4. 更新任务状态
-        tasks_db[task_id]['status'] = 'completed'
-        tasks_db[task_id]['summary_results'] = results
-
-        # 5. 同时，也将这次用于查询的新代码存入历史库
-        content_hash = hashlib.sha256(new_content.encode('utf-8')).hexdigest()
-        exists = db.query(CodeSubmission).filter(CodeSubmission.content_hash == content_hash).first()
-        if not exists:
-            db_submission = CodeSubmission(filename=new_filename, content=new_content, content_hash=content_hash)
-            db.add(db_submission)
-            db.commit()
-
-    finally:
-        db.close()
+    # 更新任务状态和结果
+    tasks_db[task_id]['status'] = 'completed'
+    tasks_db[task_id]['summary_results'] = results
+    tasks_db[task_id]['detailed_results'] = detailed_results
 
 
+# 替换旧的 /check_one 路由
 @router.post("/check_one", response_model=TaskStatusResponse, status_code=status.HTTP_202_ACCEPTED)
 async def start_one_to_many_check(
         background_tasks: BackgroundTasks,
-        file: UploadFile = File(..., description="一份需要进行1对多查重的代码文件")
+        base_file: UploadFile = File(..., description="一份基准代码文件"),
+        other_files: List[UploadFile] = File(..., description="多份需要进行对比的代码文件")
 ):
     """
-    接收一份代码，与历史库中所有代码进行比较。
+    【已修改】接收一个基准文件和多份对比文件，与文件夹内所有文件进行比较。
     """
     task_id = str(uuid.uuid4())
-    content = (await file.read()).decode('utf-8')
 
-    tasks_db[task_id] = {"status": "processing", "summary_results": None}
+    # 读取文件内容
+    base_file_content = (await base_file.read()).decode('utf-8')
+    other_files_content = {file.filename: (await file.read()).decode('utf-8') for file in other_files}
 
-    background_tasks.add_task(run_check_one, task_id, file.filename, content)
+    # 初始化任务状态
+    tasks_db[task_id] = {"status": "processing", "summary_results": None, "detailed_results": None}
+
+    # 启动后台任务，并传递正确的文件内容
+    background_tasks.add_task(run_one_to_many_check, task_id, base_file.filename, base_file_content, other_files_content)
 
     return TaskStatusResponse(task_id=task_id, status="processing")

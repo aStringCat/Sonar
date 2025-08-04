@@ -1,4 +1,4 @@
-from PyQt6 import QtGui, QtCore
+from PyQt6 import QtGui, QtCore, QtWidgets
 from PyQt6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QVBoxLayout
 from PyQt6.QtCore import QThread, QObject, pyqtSignal, pyqtSlot, Qt
 import datetime
@@ -124,16 +124,60 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(list)
     def on_analysis_success(self, results):
+        """
+        【已修复】分析成功后的处理函数。
+        增加了填充表格和正确页面跳转的逻辑。
+        """
         print("分析成功，结果为:", results)
-        self.ui.statusbar.showMessage("分析完成！", 5000)  
+        self.ui.statusbar.showMessage("分析完成！", 5000)
 
-        # 填充显示表格，待完成
-        
+        # 1. 跳转到正确的结果展示页面 (page, 索引为0)
+        self.ui.main_stack.setCurrentIndex(0)
 
-        # 跳转到结果看板页面 (page_3, 索引为1)
-        self.go_to_dashboard_page()
-        # 启用分析按钮
-        self.ui.btn_start_analysis_mode1.setEnabled(True) 
+        # 2. 清空旧数据并设置表格
+        self.ui.table_history.setRowCount(0)  # 清空表格
+        self.ui.table_history.setColumnCount(3)
+        self.ui.table_history.setHorizontalHeaderLabels(['文件1', '文件2', '相似度'])
+
+        # 3. 填充新数据
+        if not results:
+            # 如果没有结果，可以给一个提示
+            self.ui.table_history.setRowCount(1)
+            item = QtWidgets.QTableWidgetItem("未找到有相似度的文件。")
+            item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            self.ui.table_history.setItem(0, 0, item)
+            self.ui.table_history.setSpan(0, 0, 1, 3)  # 合并单元格
+            return
+
+        self.ui.table_history.setRowCount(len(results))
+        for row, res_item in enumerate(results):
+            # 将字典或模型对象转换为可访问的属性
+            file1 = res_item.get('file1', '')
+            file2 = res_item.get('file2', '')
+            similarity = res_item.get('similarity', 0.0)
+
+            # 创建表格项
+            item_file1 = QtWidgets.QTableWidgetItem(file1)
+            item_file2 = QtWidgets.QTableWidgetItem(file2)
+            item_similarity = QtWidgets.QTableWidgetItem(f"{similarity:.2%}")  # 格式化为百分比
+
+            # 设置对齐方式
+            item_similarity.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+            # 将项添加到表格
+            self.ui.table_history.setItem(row, 0, item_file1)
+            self.ui.table_history.setItem(row, 1, item_file2)
+            self.ui.table_history.setItem(row, 2, item_similarity)
+
+        # 调整列宽以适应内容
+        self.ui.table_history.resizeColumnsToContents()
+        header = self.ui.table_history.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+
+        # 4. 重新启用分析按钮
+        self.ui.btn_start_analysis_mode1.setEnabled(True)
         self.ui.btn_start_analysis_mode2.setEnabled(True)
 
     @pyqtSlot(str)

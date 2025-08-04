@@ -41,17 +41,17 @@ def start_check(file_paths: List[str]) -> Tuple[Dict[str, Any] | None, str | Non
 def start_one_to_many_check(base_file_path: str, other_file_paths: List[str]) -> Tuple[
     Dict[str, Any] | None, str | None]:
     """
-    开始一个一对多查重任务 (模式1)。
-    上传一个基准文件和多个对比文件。
+    【已修复】开始一个一对多查重任务。
+    上传一个基准文件和多个对比文件，指向 /check_one 接口并正确构建请求。
     """
     files_to_send = []
     try:
-        # 添加基准文件，FastAPI端点期望的字段名是 'base_file'
+        # 1. 添加基准文件，字段名 'base_file' 与后端接口参数名对应
         files_to_send.append(
             ('base_file', (os.path.basename(base_file_path), open(base_file_path, 'rb'), 'text/plain'))
         )
 
-        # 添加所有对比文件，FastAPI端点期望的字段名是 'other_files'
+        # 2. 添加所有对比文件，字段名 'other_files' 与后端接口参数名对应
         for path in other_file_paths:
             files_to_send.append(
                 ('other_files', (os.path.basename(path), open(path, 'rb'), 'text/plain'))
@@ -60,15 +60,19 @@ def start_one_to_many_check(base_file_path: str, other_file_paths: List[str]) ->
         if len(files_to_send) < 2:
             return None, "至少需要一个基准文件和一个对比文件。"
 
+        # 3. 发送到修改后的 /check_one 接口
         with requests.Session() as session:
             response = session.post(f"{BASE_URL}/check_one", files=files_to_send, timeout=60)
             response.raise_for_status()
         return response.json(), None
+
     except requests.exceptions.RequestException as e:
         return None, f"网络请求失败: {e}"
     finally:
         # 确保所有打开的文件都被关闭
-        for _, (filename, file_obj, _) in files_to_send:
+        for _, file_tuple in files_to_send:
+            # file_tuple is like ('filename.py', <_io.BufferedReader...>, 'text/plain')
+            file_obj = file_tuple[1]
             if file_obj:
                 file_obj.close()
 
