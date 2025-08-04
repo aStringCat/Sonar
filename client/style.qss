@@ -1,0 +1,13 @@
+
+#centralwidget {
+    background-color: transparent;
+}
+
+/*
+ * 第二步：为你真正的最外层容器（那个名为 frame 的 QFrame）设置背景色和圆角。
+ * 现在，由于底板是透明的，frame 的圆角就能完美地呈现为整个窗口的圆角。
+*/
+#frame {
+    background-color: #2E2F33; /* 你想要的窗口主背景色 */
+    border-radius: 10px;       /* 你想要的圆角弧度 */
+}
