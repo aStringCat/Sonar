@@ -828,7 +828,7 @@ background-color:rgb(255, 255, 255)
               <item>
                <widget class="QLabel" name="label_2">
                 <property name="text">
-                 <string>下面这个table是用来显示最近n条历史记录的</string>
+                 <string>详情</string>
                 </property>
                </widget>
               </item>

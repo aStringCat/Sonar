@@ -554,7 +554,7 @@ class Ui_MainWindow(object):
         self.label_login_time_4.setText(_translate("MainWindow", "代码文件夹路径："))
         self.btn_select_folder_3.setText(_translate("MainWindow", "选择文件夹"))
         self.btn_start_analysis_mode2.setText(_translate("MainWindow", "开始分析"))
-        self.label_2.setText(_translate("MainWindow", "下面这个table是用来显示最近n条历史记录的"))
+        self.label_2.setText(_translate("MainWindow", "详情"))
         self.pg_up_2.setText(_translate("MainWindow", "上一页"))
         self.pg_down_2.setText(_translate("MainWindow", "下一页"))
         self.label_login_time_2.setText(_translate("MainWindow", "登录时间："))
