@@ -1,9 +1,15 @@
 import uuid
 import itertools
-from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, status, Form
 from typing import List, Dict
 
-from .models import TaskStatusResponse, DetailedComparisonResponse, ComparisonResultItem, CodeSubmission
+# 修改这一行
+# 从新的 schemas.py 导入 Pydantic 模型
+from .schemas import (
+    TaskStatusResponse, DetailedComparisonResponse, ComparisonResultItem, QueryHistoryResponse
+)
+# 从 models.py 导入 SQLAlchemy 模型
+from .models import CodeSubmission, QueryHistory, HistoryResult
 from .core import calculate_similarity, generate_detailed_diff
 from .database import SessionLocal
 
@@ -15,75 +21,66 @@ tasks_db: Dict[str, Dict] = {}
 router = APIRouter()
 
 
-def run_check(task_id: str, files_content: Dict[str, str]):
-    """
-    这是在后台运行的实际查重函数。
-    """
+# 替换旧的 run_check_and_save
+def run_check_and_save(task_id: str, description: str, folder_name: str, files_content: Dict[str, str]):
+    """【已修改】后台运行“文件夹互查”，并保存包括文件夹名的历史记录。"""
+    # ... (函数内部的计算逻辑保持不变) ...
     filenames = list(files_content.keys())
-    results = []
+    results_list = []
     detailed_results = {}
-
-    # 将本次提交的代码存入数据库
-    db = SessionLocal()
-    try:
-        for filename, content in files_content.items():
-            # 计算哈希值
-            content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
-            # 检查是否已存在
-            exists = db.query(CodeSubmission).filter(CodeSubmission.content_hash == content_hash).first()
-            if not exists:
-                db_submission = CodeSubmission(
-                    filename=filename,
-                    content=content,
-                    content_hash=content_hash
-                )
-                db.add(db_submission)
-        db.commit()
-    finally:
-        db.close()
-
     for i, (file1, file2) in enumerate(itertools.combinations(filenames, 2)):
         code1 = files_content[file1]
         code2 = files_content[file2]
-
         similarity = calculate_similarity(code1, code2)
         result_id = f"{task_id}-{i}"
-
-        results.append(
-            ComparisonResultItem(result_id=result_id, file1=file1, file2=file2, similarity=similarity)
-        )
+        results_list.append(ComparisonResultItem(result_id=result_id, file1=file1, file2=file2, similarity=similarity))
         detailed_results[result_id] = generate_detailed_diff(file1, code1, file2, code2)
+    results_list.sort(key=lambda x: x.similarity, reverse=True)
 
-    results.sort(key=lambda x: x.similarity, reverse=True)
-
-    # 更新任务状态和结果
+    db = SessionLocal()
+    try:
+        # 【修改】保存历史记录时，加入 folder_name 和 special_file_name
+        new_history_entry = QueryHistory(
+            query_type='文件夹互查',
+            description=description,
+            folder_name=folder_name,
+            special_file_name='-' # 互查模式没有特殊文件，用'-'表示
+        )
+        db.add(new_history_entry)
+        # ... (后续的 db.commit() 等逻辑保持不变) ...
+        db.commit()
+        db.refresh(new_history_entry)
+        for res in results_list:
+            db_result = HistoryResult(history_id=new_history_entry.id, result_id=res.result_id, file1=res.file1, file2=res.file2, similarity=res.similarity)
+            db.add(db_result)
+        db.commit()
+        print(f"新历史记录 (ID: {new_history_entry.id}) 已存入数据库。")
+    finally:
+        db.close()
     tasks_db[task_id]['status'] = 'completed'
-    tasks_db[task_id]['summary_results'] = results
+    tasks_db[task_id]['summary_results'] = results_list
     tasks_db[task_id]['detailed_results'] = detailed_results
 
-
+# 替换旧的 /check 路由
 @router.post("/check", response_model=TaskStatusResponse, status_code=status.HTTP_202_ACCEPTED)
 async def start_plagiarism_check(
         background_tasks: BackgroundTasks,
-        files: List[UploadFile] = File(..., description="需要查重的多个Python代码文件")
+        files: List[UploadFile] = File(...),
+        folder_name: str = Form(...) # 【新增】从表单接收文件夹名
 ):
-    """
-    接收批量代码文件，启动后台查重任务，并立即返回任务ID。
-    """
+    """【已修改】接收“文件夹互查”请求，并将文件夹名一同存入历史记录。"""
+    # ... (函数顶部的逻辑不变) ...
     filenames = [file.filename for file in files]
     if len(filenames) != len(set(filenames)):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Duplicate filenames are not allowed. Please provide files with unique names."
-        )
-
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Duplicate filenames are not allowed. Please provide files with unique names.")
     task_id = str(uuid.uuid4())
     files_content = {file.filename: (await file.read()).decode('utf-8') for file in files}
 
+    final_description = f"文件夹 '{folder_name}' ({len(files_content)}个文件)"
     tasks_db[task_id] = {"status": "processing", "summary_results": None, "detailed_results": None}
 
-    background_tasks.add_task(run_check, task_id, files_content)
-
+    # 【修改】调用后台任务时，传入 folder_name
+    background_tasks.add_task(run_check_and_save, task_id, final_description, folder_name, files_content)
     return TaskStatusResponse(task_id=task_id, status="processing")
 
 
@@ -127,29 +124,42 @@ async def get_comparison_detail(result_id: str):
     return DetailedComparisonResponse(**detail)
 
 
-def run_one_to_many_check(task_id: str, base_filename: str, base_file_content: str, other_files_content: Dict[str, str]):
-    """
-    【已修改】后台运行的“一对多”查重函数。
-    比较一个基准文件和多个其他文件。
-    """
-    results = []
+# 替换旧的 run_one_to_many_check 函数
+# 替换旧的 run_one_to_many_check
+def run_one_to_many_check(task_id: str, description: str, folder_name: str, base_filename: str, base_file_content: str, other_files_content: Dict[str, str]):
+    """【已修改】后台运行“一对多”查重，并保存包括文件夹和文件名的历史记录。"""
+    # ... (计算逻辑不变) ...
+    results_list = []
     detailed_results = {}
-
-    # 遍历所有“其他文件”，逐一与基准文件比较
     for i, (other_filename, other_content) in enumerate(other_files_content.items()):
         similarity = calculate_similarity(base_file_content, other_content)
         result_id = f"{task_id}-{i}"
-
-        results.append(
-            ComparisonResultItem(result_id=result_id, file1=base_filename, file2=other_filename, similarity=similarity)
-        )
+        results_list.append(ComparisonResultItem(result_id=result_id, file1=base_filename, file2=other_filename, similarity=similarity))
         detailed_results[result_id] = generate_detailed_diff(base_filename, base_file_content, other_filename, other_content)
+    results_list.sort(key=lambda x: x.similarity, reverse=True)
 
-    results.sort(key=lambda x: x.similarity, reverse=True)
-
-    # 更新任务状态和结果
+    db = SessionLocal()
+    try:
+        # 【修改】保存历史记录时，加入 folder_name 和 special_file_name (即 base_filename)
+        new_history_entry = QueryHistory(
+            query_type='一对多比对',
+            description=description,
+            folder_name=folder_name,
+            special_file_name=base_filename
+        )
+        # ... (后续的 db.add, db.commit 等逻辑不变) ...
+        db.add(new_history_entry)
+        db.commit()
+        db.refresh(new_history_entry)
+        for res in results_list:
+            db_result = HistoryResult(history_id=new_history_entry.id, result_id=res.result_id, file1=res.file1, file2=res.file2, similarity=res.similarity)
+            db.add(db_result)
+        db.commit()
+        print(f"新历史记录 (ID: {new_history_entry.id}) 已存入数据库。")
+    finally:
+        db.close()
     tasks_db[task_id]['status'] = 'completed'
-    tasks_db[task_id]['summary_results'] = results
+    tasks_db[task_id]['summary_results'] = results_list
     tasks_db[task_id]['detailed_results'] = detailed_results
 
 
@@ -157,22 +167,55 @@ def run_one_to_many_check(task_id: str, base_filename: str, base_file_content: s
 @router.post("/check_one", response_model=TaskStatusResponse, status_code=status.HTTP_202_ACCEPTED)
 async def start_one_to_many_check(
         background_tasks: BackgroundTasks,
-        base_file: UploadFile = File(..., description="一份基准代码文件"),
-        other_files: List[UploadFile] = File(..., description="多份需要进行对比的代码文件")
+        base_file: UploadFile = File(...),
+        other_files: List[UploadFile] = File(...),
+        folder_name: str = Form(...) # 【新增】从表单接收文件夹名
 ):
-    """
-    【已修改】接收一个基准文件和多份对比文件，与文件夹内所有文件进行比较。
-    """
+    """【已修改】接收“一对多”请求，并将文件夹和文件名一同存入历史记录。"""
+    # ... (函数顶部的逻辑不变) ...
     task_id = str(uuid.uuid4())
-
-    # 读取文件内容
     base_file_content = (await base_file.read()).decode('utf-8')
     other_files_content = {file.filename: (await file.read()).decode('utf-8') for file in other_files}
 
-    # 初始化任务状态
+    final_description = f"文件 '{base_file.filename}' vs 文件夹 '{folder_name}' ({len(other_files_content)}个文件)"
     tasks_db[task_id] = {"status": "processing", "summary_results": None, "detailed_results": None}
 
-    # 启动后台任务，并传递正确的文件内容
-    background_tasks.add_task(run_one_to_many_check, task_id, base_file.filename, base_file_content, other_files_content)
-
+    # 【修改】调用后台任务时，传入 folder_name 和 base_file.filename
+    background_tasks.add_task(run_one_to_many_check, task_id, final_description, folder_name, base_file.filename, base_file_content, other_files_content)
     return TaskStatusResponse(task_id=task_id, status="processing")
+
+# --- 新增的历史记录接口 ---
+
+# 修改这一行
+@router.get("/history", response_model=List[QueryHistoryResponse])
+async def get_all_history():
+    """获取所有历史查询任务的列表，按时间倒序排列。"""
+    db = SessionLocal()
+    try:
+        history_list = db.query(QueryHistory).order_by(QueryHistory.query_time.desc()).all()
+        return history_list
+    finally:
+        db.close()
+
+
+@router.get("/history/{history_id}", response_model=TaskStatusResponse)
+async def get_history_detail(history_id: int):
+    """根据历史ID获取该次任务的详细查重结果。"""
+    db = SessionLocal()
+    try:
+        results = db.query(HistoryResult).filter(HistoryResult.history_id == history_id).order_by(
+            HistoryResult.similarity.desc()).all()
+        if not results:
+            raise HTTPException(status_code=404, detail="未找到该历史记录的详细结果。")
+
+        # 将数据库结果转换为前端期望的 Pydantic 模型列表
+        response_results = [ComparisonResultItem.from_orm(res) for res in results]
+
+        # 返回与实时查询完全相同的数据结构
+        return TaskStatusResponse(
+            task_id=f"history-{history_id}",
+            status="completed",
+            results=response_results
+        )
+    finally:
+        db.close()
