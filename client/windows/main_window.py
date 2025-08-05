@@ -1,17 +1,15 @@
-from PyQt6 import QtGui, QtCore, QtWidgets
-import os
-from PyQt6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QVBoxLayout
-from PyQt6.QtCore import QThread, QObject, pyqtSignal, pyqtSlot, Qt
 import datetime
-from client.ui.main_window_ui import Ui_MainWindow
-# 修改这一行
-from client.threads.worker import Worker, HistoryWorker
+import os
 
-# 修改这一行，加入 QTableWidget, QHeaderView
-from PyQt6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QVBoxLayout, QTableWidget, QHeaderView
-from PyQt6.QtCore import QSize
-from PyQt6.QtGui import QIcon
 import qtawesome as qta
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtCore import QThread, pyqtSlot, Qt
+from PyQt6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QTableWidget, QHeaderView
+
+from client.threads.worker import Worker, HistoryWorker
+from client.ui.main_window_ui import Ui_MainWindow
+
+
 # --- Main_window ---
 class MainWindow(QMainWindow):
     def __init__(self):
