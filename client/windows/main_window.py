@@ -1,33 +1,80 @@
 import datetime
 import os
-import json  # 【新增】导入json模块
+import json
 
 import qtawesome as qta
 from PyQt6 import QtCore, QtWidgets
-# 【新增】导入 QDoubleSpinBox, QCheckBox, QWidget, QHBoxLayout
 from PyQt6.QtCore import QThread, pyqtSlot, Qt, QTimer
 from PyQt6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QTableWidget, QHeaderView, QDoubleSpinBox, QCheckBox, \
     QWidget, QHBoxLayout
 
 from client.threads.worker import Worker, HistoryWorker
-# 【修改】导入 client
 from client.api import client
 from client.ui.main_window_ui import Ui_MainWindow
 
 
 def _format_code_to_html(file_details: dict) -> str:
-    if not file_details or 'lines' not in file_details: return "<code>无法加载代码。</code>"
+    if not file_details or 'lines' not in file_details:
+        return "<pre><code>无法加载代码。</code></pre>"
+
     filename = file_details.get('name', 'Unknown File')
-    html = f"<h3>{filename}</h3><pre><code>"
+
+    # 定义新的CSS样式
+    styles = """
+    <style>
+        pre {
+            background-color: #F7F7F7; /* 代码块背景色 */
+            border: 1px solid #E0E0E0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+            white-space: pre-wrap; /* 允许自动换行长代码 */
+        }
+        .line {
+            min-height: 1.5em; /* 确保空行也有高度 */
+        }
+        .line-number {
+            display: inline-block;
+            width: 40px;
+            color: #999;
+            text-align: right;
+            padding-right: 10px;
+            -webkit-user-select: none; /* 禁止选择行号 */
+            user-select: none;
+        }
+        .line.line-similar {
+            background-color: #E6FFED; /* 浅绿色 */
+        }
+        .line.line-unique {
+            background-color: #FFEBEE; /* 浅粉色 */
+        }
+        h3 {
+            font-family: sans-serif;
+            color: #333;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
+    """
+
+    html = f"{styles}<h3>{filename}</h3><pre>"
+
     for line in file_details['lines']:
-        text = line.get('text', '').replace('<', '&lt;').replace('>', '&gt;')
+        # 将HTML实体转义，并确保空行也能正常显示
+        text = line.get('text', '').replace('<', '&lt;').replace('>', '&gt;') or '&nbsp;'
         line_num = line.get('line_num', '')
         status = line.get('status', 'unique')
-        if status == 'similar':
-            html += f"<span style='background-color: #FFD700;'>{line_num: >4}: {text}</span>\n"
-        else:
-            html += f"{line_num: >4}: {text}\n"
-    html += "</code></pre>"
+
+        # 根据状态应用不同的样式类
+        css_class = 'line-similar' if status == 'similar' else 'line-unique'
+
+        # 【关键修复】使用 <div> 标签替代 <span> 来包裹每一行
+        html += f"<div class='line {css_class}'><span class='line-number'>{line_num}</span>{text}</div>"
+
+    html += "</pre>"
     return html
 
 
