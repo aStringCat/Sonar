@@ -1,25 +1,84 @@
 import difflib
+import ast
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from .schemas import FileDetail, CodeLine
 
 
+class AstNormalizer(ast.NodeTransformer):
+
+    def __init__(self):
+        self.identifiers = {}
+        self.counter = 0
+
+    def get_name(self, name):
+        if name not in self.identifiers:
+            self.identifiers[name] = f"id_{self.counter}"
+            self.counter += 1
+        return self.identifiers[name]
+
+    def visit_Name(self, node):
+        node.id = self.get_name(node.id)
+        return node
+
+    def visit_FunctionDef(self, node):
+        node.name = self.get_name(node.name)
+        self.generic_visit(node)
+        return node
+
+    def visit_ClassDef(self, node):
+        node.name = self.get_name(node.name)
+        self.generic_visit(node)
+        return node
+
+    def visit_arg(self, node):
+        node.arg = self.get_name(node.arg)
+        return node
+
+
 def calculate_similarity(code1: str, code2: str) -> float:
-    """使用 TF-IDF 和余弦相似度计算两段代码的相似度"""
     try:
-        vectorizer = TfidfVectorizer(token_pattern=r'(?u)\b\w+\b')
-        tfidf_matrix = vectorizer.fit_transform([code1, code2])
-        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
-        return float(similarity[0][0])
+        # 1. 将代码解析为 AST
+        tree1 = ast.parse(code1)
+        tree2 = ast.parse(code2)
+
+        # 2. 规范化 AST (替换变量名、函数名等)
+        normalizer1 = AstNormalizer()
+        normalized_tree1 = normalizer1.visit(tree1)
+
+        normalizer2 = AstNormalizer()
+        normalized_tree2 = normalizer2.visit(tree2)
+
+        # 3. 将规范化后的 AST 转回字符串，以便比较
+        # ast.dump() 能提供一个非常适合比较的、紧凑的树结构表示
+        normalized_code1 = ast.dump(normalized_tree1)
+        normalized_code2 = ast.dump(normalized_tree2)
+
+        # 4. 使用 SequenceMatcher 计算两个规范化后字符串的相似度
+        seq_matcher = difflib.SequenceMatcher(None, normalized_code1, normalized_code2)
+
+        return seq_matcher.ratio()
+
+    except SyntaxError:
+        '''针对AST无法处理的情况'''
+        try:
+            vectorizer = TfidfVectorizer(token_pattern=r'(?u)\b\w+\b')
+            tfidf_matrix = vectorizer.fit_transform([code1, code2])
+            similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
+            return float(similarity[0][0])
+        except ValueError:
+            return 0.0
     except ValueError:
+        return 0.0
+    except TypeError:
+        return 0.0
+    except NameError:
+        return 0.0
+    except AttributeError:
         return 0.0
 
 
 def generate_detailed_diff(file1_name: str, code1: str, file2_name: str, code2: str) -> dict:
-    """
-    【二次修复】修正了 'Match' object has no attribute 'n' 的错误。
-    将 block.n 替换为正确的 block.size。
-    """
     code1_lines = code1.splitlines()
     code2_lines = code2.splitlines()
 
