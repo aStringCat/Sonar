@@ -80,7 +80,7 @@ def generate_detailed_diff(file1_name: str, code1: str, file2_name: str, code2: 
         map1 = get_normalized_node_map(code1)
         map2 = get_normalized_node_map(code2)
     except (SyntaxError, Exception):
-        # 如果AST解析失败，则退回到基于文本的difflib
+        # 如果AST解析失败，则退回到基于文本的diff
         return _generate_diff_fallback(file1_name, code1, file2_name, code2)
 
     # 查找两个文件中都存在的相同结构
