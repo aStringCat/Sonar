@@ -11,17 +11,46 @@ from client.ui.main_window_ui import Ui_MainWindow
 
 
 # --- Main_window ---
+def _format_code_to_html(file_details: dict) -> str:
+    """一个辅助函数，用于将带状态的代码行列表转换为高亮的HTML。"""
+    if not file_details or 'lines' not in file_details:
+        return "<code>无法加载代码。</code>"
+
+    html_lines = []
+    # 添加文件名作为标题
+    filename = file_details.get('name', 'Unknown File')
+    html_lines.append(f"<h3>{filename}</h3>")
+
+    # 使用 pre 标签保持代码格式
+    html_lines.append("<pre><code>")
+    for line in file_details['lines']:
+        text = line.get('text', '').replace('<', '&lt;').replace('>', '&gt;')  # HTML转义
+        line_num = line.get('line_num', '')
+        status = line.get('status', 'unique')
+
+        # 根据状态决定是否高亮
+        if status == 'similar':
+            html_lines.append(f"<span style='background-color: #FFD700;'>{line_num: >4}: {text}</span>")
+        else:
+            html_lines.append(f"{line_num: >4}: {text}")
+
+    html_lines.append("</code></pre>")
+    return "\n".join(html_lines)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.m_Position = None
+        self.m_flag = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
         # 【修正后】的代码块，解决了布局冲突和属性错误
         # --- 初始化历史记录页面 ---
         # 1. 创建一个新的表格控件
-        self.history_table = QTableWidget()
+        self.history_table: QTableWidget = QTableWidget()
 
         # 2. 从UI文件中获取 page_3 已有的布局
         existing_layout = self.ui.page_3.layout()
@@ -157,7 +186,7 @@ class MainWindow(QMainWindow):
         self.ui.btn_start_analysis_mode2.setEnabled(False)
         self.ui.statusbar.showMessage("正在分析中，请稍候...")
 
-        self.thread = QThread()
+        self.thread:QThread = QThread()
         # 【修改】将 names 传递给 Worker
         self.worker = Worker(current_mode, paths, names)
         self.worker.moveToThread(self.thread)
@@ -237,7 +266,7 @@ class MainWindow(QMainWindow):
     def go_to_dashboard_page(self):
         self.ui.main_stack.setCurrentIndex(1)
 
-    def go_to_details_page(self, row, column):
+    def go_to_details_page(self, row, _column):
         """
         【已实现】当用户点击表格行时，获取详情并高亮显示。
         """
@@ -265,41 +294,14 @@ class MainWindow(QMainWindow):
 
         # 处理并显示 file1 的代码
         file1_details = details.get('file1_details', {})
-        self.ui.te_code_file1.setHtml(self._format_code_to_html(file1_details))
+        self.ui.te_code_file1.setHtml(_format_code_to_html(file1_details))
 
         # 处理并显示 file2 的代码
         file2_details = details.get('file2_details', {})
-        self.ui.te_code_file2.setHtml(self._format_code_to_html(file2_details))
+        self.ui.te_code_file2.setHtml(_format_code_to_html(file2_details))
 
         # 跳转到详情页 (page_2, 索引为2)
         self.ui.main_stack.setCurrentIndex(2)
-
-    def _format_code_to_html(self, file_details: dict) -> str:
-        """一个辅助函数，用于将带状态的代码行列表转换为高亮的HTML。"""
-        if not file_details or 'lines' not in file_details:
-            return "<code>无法加载代码。</code>"
-
-        html_lines = []
-        # 添加文件名作为标题
-        filename = file_details.get('name', 'Unknown File')
-        html_lines.append(f"<h3>{filename}</h3>")
-
-        # 使用 pre 标签保持代码格式
-        html_lines.append("<pre><code>")
-        for line in file_details['lines']:
-            text = line.get('text', '').replace('<', '&lt;').replace('>', '&gt;')  # HTML转义
-            line_num = line.get('line_num', '')
-            status = line.get('status', 'unique')
-
-            # 根据状态决定是否高亮
-            if status == 'similar':
-                html_lines.append(f"<span style='background-color: #FFD700;'>{line_num: >4}: {text}</span>")
-            else:
-                html_lines.append(f"{line_num: >4}: {text}")
-
-        html_lines.append("</code></pre>")
-        return "\n".join(html_lines)
-
 
     def toggle_maximize_restore(self):
 
@@ -348,7 +350,7 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_3.setEnabled(False)
 
         # 创建并启动后台线程
-        self.history_thread = QThread()
+        self.history_thread:QThread = QThread()
         self.history_worker = HistoryWorker()
         self.history_worker.moveToThread(self.history_thread)
 
@@ -362,7 +364,7 @@ class MainWindow(QMainWindow):
 
         self.history_thread.start()
 
-    def on_history_item_clicked(self, row, column):
+    def on_history_item_clicked(self, row, _column):
         """槽函数：当用户点击某条历史记录时，获取其详细结果"""
         item = self.history_table.item(row, 0)
         if not item:
@@ -447,5 +449,3 @@ class MainWindow(QMainWindow):
         QMessageBox.critical(self, "加载失败", f"无法加载历史记录: {error_message}")
         self.ui.statusbar.showMessage("加载历史记录失败！", 5000)
         self.ui.pushButton_3.setEnabled(True)  # 重新启用按钮
-
-
