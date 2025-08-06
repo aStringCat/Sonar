@@ -1,10 +1,9 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, func
 from sqlalchemy.orm import declarative_base
 import datetime
 
 Base = declarative_base()
 
-# --- SQLAlchemy Database Models ---
 
 class CodeSubmission(Base):
     __tablename__ = "code_submissions"
@@ -14,6 +13,7 @@ class CodeSubmission(Base):
     content = Column(Text)
     submitted_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     content_hash = Column(String(64), unique=True, index=True)
+
 
 class QueryHistory(Base):
     """用于存储每一次查询任务的元数据"""
@@ -26,6 +26,7 @@ class QueryHistory(Base):
     special_file_name = Column(String, nullable=True)
     description = Column(Text)
 
+
 class HistoryResult(Base):
     """用于存储某次历史任务下的具体比对结果"""
     __tablename__ = "history_results"
@@ -36,3 +37,10 @@ class HistoryResult(Base):
     file1 = Column(String)
     file2 = Column(String)
     similarity = Column(Float)
+    plagiarized = Column(Boolean, default=False, nullable=False)
+
+
+class Setting(Base):
+    __tablename__ = 'settings'
+    key = Column(String, primary_key=True)
+    value = Column(String)

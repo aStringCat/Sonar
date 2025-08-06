@@ -7,11 +7,11 @@ create_db_and_tables()
 app = FastAPI(
     title="Python 代码查重工具 API",
     description="一个用于课程作业抄袭检测的后端服务。",
-    version="1.0.0"
+    version="1.1.0"
 )
 
-# 包含API路由
 app.include_router(router, prefix="/api", tags=["Plagiarism Checker"])
+
 
 @app.get("/", tags=["Root"])
 async def read_root():
