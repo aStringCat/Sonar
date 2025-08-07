@@ -20,7 +20,7 @@ class QueryHistory(Base):
     __tablename__ = "query_history"
 
     id = Column(Integer, primary_key=True, index=True)
-    query_time = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    query_time = Column(DateTime, default=lambda: datetime.datetime.now())
     query_type = Column(String(50))
     folder_name = Column(String, nullable=True)
     special_file_name = Column(String, nullable=True)
