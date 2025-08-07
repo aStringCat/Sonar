@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import QMainWindow, QMessageBox, QFileDialog, QTableWidget,
 from client.threads.worker import Worker, HistoryWorker
 from client.api import client
 from client.ui.main_window_ui import Ui_MainWindow
+from client.windows.graph_window import GraphWindow
 
 
 def _format_code_to_html(file_details: dict) -> str:
@@ -87,11 +88,14 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        self.analysis_results = None
+        self.current_analysis_mode = None  # 【新增】存储当前分析模式
+
         # --- UI元素和逻辑初始化 ---
-        self._setup_new_ui_elements()  # 调用一个新函数来创建和布局新UI控件
-        self.threshold_update_timer = QTimer(self)  # 创建一个计时器，用于延迟更新阈值
+        self._setup_new_ui_elements()
+        self.threshold_update_timer = QTimer(self)
         self.threshold_update_timer.setSingleShot(True)
-        self.threshold_update_timer.setInterval(1000)  # 延迟1秒
+        self.threshold_update_timer.setInterval(1000)
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -108,35 +112,32 @@ class MainWindow(QMainWindow):
         self.history_worker = None
 
         self._setup_window_icons()
-        self.load_initial_threshold()  # 程序启动时加载阈值
+        self.load_initial_threshold()
 
     def _setup_new_ui_elements(self):
-        """【全新】创建一个函数，专门用于初始化所有新增的UI控件。"""
-        # 1. 创建阈值设置控件
+        """初始化新增的UI控件。"""
         self.threshold_label = QtWidgets.QLabel("相似度阈值:", self.ui.page)
         self.threshold_spinbox = QDoubleSpinBox(self.ui.page)
         self.threshold_spinbox.setRange(0.0, 1.0)
         self.threshold_spinbox.setSingleStep(0.05)
         self.threshold_spinbox.setDecimals(2)
-        self.threshold_spinbox.setValue(0.85)  # 默认值
+        self.threshold_spinbox.setValue(0.85)
 
-        # 2. 创建导出按钮
         self.export_button = QtWidgets.QPushButton("导出抄袭项", self.ui.page)
+        self.graph_button = QtWidgets.QPushButton("生成关系图", self.ui.page)
+        self.graph_button.setEnabled(False)
 
-        # 3. 创建一个新的水平布局来容纳这些新控件
         new_controls_layout = QHBoxLayout()
         new_controls_layout.addWidget(self.threshold_label)
         new_controls_layout.addWidget(self.threshold_spinbox)
-        new_controls_layout.addStretch()  # 添加伸缩项，把导出按钮推到右边
+        new_controls_layout.addStretch()
+        new_controls_layout.addWidget(self.graph_button)
         new_controls_layout.addWidget(self.export_button)
 
-        # 4. 将这个新布局插入到主页面 (page) 的现有垂直布局的某个位置
-        # 我们把它插在 “详情” 标签 (label_2) 的上方
         page_layout = self.ui.page.layout()
         if page_layout:
-            page_layout.insertLayout(2, new_controls_layout)  # 插入到第3个位置（索引为2）
+            page_layout.insertLayout(2, new_controls_layout)
 
-        # 5. 初始化历史记录页面（保持不变）
         self.history_table: QTableWidget = QTableWidget()
         existing_layout = self.ui.page_3.layout()
         if existing_layout is not None:
@@ -155,43 +156,134 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
 
-    def display_login_time(self):
-        self.ui.label_login_time_2.setText(f"登录时间：{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
     def connect_signals(self):
-        """【已修改】连接所有信号，包括新增的控件。"""
-        # 窗口控制按钮
+        """连接所有信号。"""
+        # ... (已有信号连接保持不变)
         self.ui.pushButton_4.clicked.connect(self.showMinimized)
         self.ui.pushButton_5.clicked.connect(self.toggle_maximize_restore)
         self.ui.pushButton_6.clicked.connect(self.close)
-
-        # 模式切换
         self.ui.pushButton.clicked.connect(lambda: self.change_mode(0))
         self.ui.pushButton_2.clicked.connect(lambda: self.change_mode(1))
-
-        # 文件/文件夹选择
         self.ui.btn_select_folder.clicked.connect(self.select_pairwise_directory)
         self.ui.btn_select_folder_2.clicked.connect(self.select_one_to_many_file)
         self.ui.btn_select_folder_3.clicked.connect(self.select_one_to_many_directory)
-
-        # 分析按钮
         self.ui.btn_start_analysis_mode1.clicked.connect(self.start_analysis)
         self.ui.btn_start_analysis_mode2.clicked.connect(self.start_analysis)
-
-        # 页面跳转
         self.ui.home.clicked.connect(self.go_to_home_page)
         self.ui.btn_back.clicked.connect(self.go_to_home_page)
         self.ui.pushButton_7.clicked.connect(self.go_to_home_page)
         self.ui.pushButton_3.clicked.connect(self.show_history_page)
-
-        # 表格点击
         self.ui.table_history.cellClicked.connect(self.go_to_details_page)
         self.history_table.cellClicked.connect(self.on_history_item_clicked)
-
-        # --- 【新增】连接新控件的信号 ---
         self.threshold_spinbox.valueChanged.connect(self.on_threshold_changed)
         self.threshold_update_timer.timeout.connect(self.update_threshold_on_server)
         self.export_button.clicked.connect(self.export_plagiarized_items)
+        self.graph_button.clicked.connect(self.show_graph_window)
+
+    def start_analysis(self):
+        """开始分析前，存储当前模式。"""
+        self.graph_button.setEnabled(False)
+        self.analysis_results = None
+        self.current_analysis_mode = self.ui.stackedWidget.currentIndex()  # 【关键】存储当前模式
+
+        paths, names = {}, {}
+        if self.current_analysis_mode == 0:
+            folder_path = self.ui.le_folder_path.text()
+            paths['directory'] = folder_path
+            names['folder_name'] = os.path.basename(folder_path)
+        else:
+            paths['base_file'] = self.ui.le_folder_path_2.text()
+            folder_path = self.ui.le_folder_path_3.text()
+            paths['compare_dir'] = folder_path
+            names['folder_name'] = os.path.basename(folder_path)
+
+        self.ui.btn_start_analysis_mode1.setEnabled(False)
+        self.ui.btn_start_analysis_mode2.setEnabled(False)
+        self.ui.statusbar.showMessage("正在分析中，请稍候...")
+        self.thread = QThread()
+        self.worker = Worker(self.current_analysis_mode, paths, names)
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.worker.success.connect(self.on_analysis_success)
+        self.worker.error.connect(self.on_analysis_error)
+        self.thread.start()
+
+    @pyqtSlot(list)
+    def on_analysis_success(self, results):
+        """分析成功后，处理结果并根据模式自动弹出关系图。"""
+        self.analysis_results = results
+        self.graph_button.setEnabled(True)
+        print("分析成功，结果为:", results)
+        self.ui.statusbar.showMessage("分析完成！", 5000)
+        self.ui.main_stack.setCurrentIndex(0)
+
+        self.ui.table_history.setRowCount(0)
+        self.ui.table_history.setColumnCount(4)
+        self.ui.table_history.setHorizontalHeaderLabels(['文件1', '文件2', '相似度', '是否抄袭'])
+
+        if not results:
+            self.ui.table_history.setRowCount(1)
+            item = QtWidgets.QTableWidgetItem("未找到有相似度的文件。")
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.ui.table_history.setItem(0, 0, item)
+            self.ui.table_history.setSpan(0, 0, 1, 4)
+            return
+
+        self.ui.table_history.setRowCount(len(results))
+        for row, res_item in enumerate(results):
+            file1 = res_item.get('file1', '')
+            file2 = res_item.get('file2', '')
+            similarity = res_item.get('similarity', 0.0)
+            result_id = res_item.get('result_id', '')
+            is_plagiarized = res_item.get('plagiarized', False)
+
+            item_file1 = QtWidgets.QTableWidgetItem(file1)
+            item_file2 = QtWidgets.QTableWidgetItem(file2)
+            item_similarity = QtWidgets.QTableWidgetItem(f"{similarity:.2%}")
+            item_similarity.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_file1.setData(Qt.ItemDataRole.UserRole, result_id)
+
+            self.ui.table_history.setItem(row, 0, item_file1)
+            self.ui.table_history.setItem(row, 1, item_file2)
+            self.ui.table_history.setItem(row, 2, item_similarity)
+
+            checkbox = QCheckBox()
+            checkbox.setChecked(is_plagiarized)
+            checkbox.stateChanged.connect(
+                lambda state, rid=result_id: self.on_mark_changed(rid, state == Qt.CheckState.Checked.value)
+            )
+            cell_widget = QWidget()
+            layout = QHBoxLayout(cell_widget)
+            layout.addWidget(checkbox)
+            layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.setContentsMargins(0, 0, 0, 0)
+            self.ui.table_history.setCellWidget(row, 3, cell_widget)
+
+        header = self.ui.table_history.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self.ui.btn_start_analysis_mode1.setEnabled(True)
+        self.ui.btn_start_analysis_mode2.setEnabled(True)
+
+        # 如果是文件夹互查模式，并且有结果，则自动显示关系图
+        if self.current_analysis_mode == 0 and self.analysis_results:
+            self.show_graph_window()
+
+    def show_graph_window(self):
+        """显示抄袭关系网络图窗口。"""
+        if not self.analysis_results:
+            QMessageBox.information(self, "提示", "请先执行一次分析。")
+            return
+        graph_dialog = GraphWindow(self.analysis_results, self)
+        graph_dialog.exec()
+
+    def display_login_time(self):
+        self.ui.label_login_time_2.setText(f"登录时间：{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     def load_initial_threshold(self):
         """【全新】程序启动时从服务器加载阈值。"""
@@ -206,11 +298,11 @@ class MainWindow(QMainWindow):
             self.ui.statusbar.showMessage(f"成功加载相似度阈值: {threshold:.2f}", 3000)
 
     def on_threshold_changed(self):
-        """【全新】当用户修改SpinBox时，重启计时器。"""
+        """当用户修改SpinBox时，重启计时器。"""
         self.threshold_update_timer.start()
 
     def update_threshold_on_server(self):
-        """【全新】计时器到期后，真正将新阈值发送到服务器。"""
+        """计时器到期后，真正将新阈值发送到服务器。"""
         new_value = self.threshold_spinbox.value()
         self.ui.statusbar.showMessage(f"正在更新阈值为 {new_value:.2f}...")
         success, err = client.set_similarity_threshold(new_value)
@@ -245,96 +337,6 @@ class MainWindow(QMainWindow):
 
     def change_mode(self, index):
         self.ui.stackedWidget.setCurrentIndex(index)
-
-    def start_analysis(self):
-        current_mode = self.ui.stackedWidget.currentIndex()
-        paths, names = {}, {}
-        if current_mode == 0:
-            folder_path = self.ui.le_folder_path.text()
-            paths['directory'] = folder_path
-            names['folder_name'] = os.path.basename(folder_path)
-        else:
-            paths['base_file'] = self.ui.le_folder_path_2.text()
-            folder_path = self.ui.le_folder_path_3.text()
-            paths['compare_dir'] = folder_path
-            names['folder_name'] = os.path.basename(folder_path)
-        self.ui.btn_start_analysis_mode1.setEnabled(False)
-        self.ui.btn_start_analysis_mode2.setEnabled(False)
-        self.ui.statusbar.showMessage("正在分析中，请稍候...")
-        self.thread = QThread()
-        self.worker = Worker(current_mode, paths, names)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.success.connect(self.on_analysis_success)
-        self.worker.error.connect(self.on_analysis_error)
-        self.thread.start()
-
-    @pyqtSlot(list)
-    def on_analysis_success(self, results):
-        """分析成功后，处理包含抄袭标记的结果，并添加复选框。"""
-        print("分析成功，结果为:", results)
-        self.ui.statusbar.showMessage("分析完成！", 5000)
-        self.ui.main_stack.setCurrentIndex(0)
-
-        # 增加一列“是否抄袭”
-        self.ui.table_history.setRowCount(0)
-        self.ui.table_history.setColumnCount(4)
-        self.ui.table_history.setHorizontalHeaderLabels(['文件1', '文件2', '相似度', '是否抄袭'])
-
-        if not results:
-            self.ui.table_history.setRowCount(1)
-            item = QtWidgets.QTableWidgetItem("未找到有相似度的文件。")
-            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.ui.table_history.setItem(0, 0, item)
-            self.ui.table_history.setSpan(0, 0, 1, 4)
-            return
-
-        self.ui.table_history.setRowCount(len(results))
-        for row, res_item in enumerate(results):
-            file1 = res_item.get('file1', '')
-            file2 = res_item.get('file2', '')
-            similarity = res_item.get('similarity', 0.0)
-            result_id = res_item.get('result_id', '')
-            is_plagiarized = res_item.get('plagiarized', False)
-
-            item_file1 = QtWidgets.QTableWidgetItem(file1)
-            item_file2 = QtWidgets.QTableWidgetItem(file2)
-            item_similarity = QtWidgets.QTableWidgetItem(f"{similarity:.2%}")
-            item_similarity.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            # 将 result_id 存储在第一列的自定义数据角色中
-            item_file1.setData(Qt.ItemDataRole.UserRole, result_id)
-
-            self.ui.table_history.setItem(row, 0, item_file1)
-            self.ui.table_history.setItem(row, 1, item_file2)
-            self.ui.table_history.setItem(row, 2, item_similarity)
-
-            # --- 添加复选框 ---
-            checkbox = QCheckBox()
-            checkbox.setChecked(is_plagiarized)
-            # 使用 lambda 来捕获当前的 result_id 和 checkbox 实例
-            checkbox.stateChanged.connect(
-                lambda state, rid=result_id: self.on_mark_changed(rid, state == Qt.CheckState.Checked.value)
-            )
-            # QTableWidget 需要一个 QWidget 来容纳 checkbox，并使其居中
-            cell_widget = QWidget()
-            layout = QHBoxLayout(cell_widget)
-            layout.addWidget(checkbox)
-            layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.setContentsMargins(0, 0, 0, 0)
-            self.ui.table_history.setCellWidget(row, 3, cell_widget)
-            # --- 复选框添加结束 ---
-
-        header = self.ui.table_history.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        self.ui.btn_start_analysis_mode1.setEnabled(True)
-        self.ui.btn_start_analysis_mode2.setEnabled(True)
 
     def on_mark_changed(self, result_id: str, is_checked: bool):
         """当用户点击复选框时，调用API更新后端的标记。"""
@@ -468,7 +470,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self, "保存失败", f"无法将文件写入磁盘: {e}")
                 self.ui.statusbar.showMessage("保存文件失败！", 5000)
 
-    # --- 窗口拖动和最大化/最小化/关闭的函数 (保持不变) ---
+    # --- 窗口拖动和最大化/最小化/关闭的函数 ---
     def toggle_maximize_restore(self):
         if self.isMaximized():
             self.showNormal()
