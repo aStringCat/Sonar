@@ -78,7 +78,8 @@ def _format_code_to_html(file_details: dict) -> str:
                 html += f"<span class='similar-chunk'>{text}</span>"
             else:
                 # 如果是独特块，直接添加文本 (默认黑色)
-                html += f"<span class='unique-chunk'>{text}</span>"
+                html += f"<span class='unique-chunk'>{text}</span>"  # 有色
+                # html += text  # 无色
 
         # 确保空行也能正常显示高度
         if not line.get('chunks'):
