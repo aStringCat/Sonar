@@ -2,37 +2,36 @@ import time
 import os
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot
 from client.api import client as api_client
-from typing import Dict, List
+from typing import Dict, Any, List
 
 
 class Worker(QObject):
-    finished = pyqtSignal()
-    success = pyqtSignal(list)
-    error = pyqtSignal(str)
-    progress = pyqtSignal(str)
+    finished: pyqtSignal = pyqtSignal()
+    success: pyqtSignal = pyqtSignal(list)
+    error: pyqtSignal = pyqtSignal(str)
+    progress: pyqtSignal = pyqtSignal(str)
 
     def __init__(self, mode: int, paths: Dict[str, str], names: Dict[str, str] = None):
         super().__init__()
-        self.mode = mode
-        self.paths = paths
-        self.names = names if names is not None else {}  # 【新增】接收文件名
-        self.is_running = True
+        self.mode: int = mode
+        self.paths: Dict[str, str] = paths
+        self.names: Dict[str, str] = names if names is not None else {}
+        self.is_running: bool = True
 
     @pyqtSlot()
     def run(self):
         try:
             self.progress.emit("正在提交文件到服务器...")
-            task_data = None
-            err = None
+            task_data: Dict[str, Any] | None = None
+            err: str | None = None
             if self.mode == 0:
-                dir_path = self.paths.get('directory')
+                dir_path: str | None = self.paths.get('directory')
                 if not dir_path or not os.path.isdir(dir_path):
                     raise Exception("无效的文件夹路径。")
-                file_paths = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.endswith('.py')]
+                file_paths: List[str] = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.endswith('.py')]
                 if len(file_paths) < 2:
                     raise Exception("文件夹内至少需要两个Python文件才能进行互查。")
 
-                # 【修改】传递文件夹名
                 folder_name = self.names.get('folder_name', os.path.basename(dir_path))
                 task_data, err = api_client.start_check(file_paths, folder_name=folder_name)
 
@@ -47,11 +46,9 @@ class Worker(QObject):
                 if not other_files:
                     raise Exception("对比文件夹内没有任何Python文件。")
 
-                # 【修改】传递文件夹名
                 folder_name = self.names.get('folder_name', os.path.basename(compare_dir))
                 task_data, err = api_client.start_one_to_many_check(base_file, other_files, folder_name=folder_name)
 
-            # ... (后续的轮询逻辑保持不变) ...
             if err:
                 raise Exception(err)
             if not task_data or 'task_id' not in task_data:
@@ -84,11 +81,12 @@ class Worker(QObject):
     def stop(self):
         self.is_running = False
 
+
 class HistoryWorker(QObject):
     """一个专门用于从后台获取历史记录列表的 Worker。"""
-    finished = pyqtSignal()
-    success = pyqtSignal(list)
-    error = pyqtSignal(str)
+    finished: pyqtSignal = pyqtSignal()
+    success: pyqtSignal = pyqtSignal(list)
+    error: pyqtSignal = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
