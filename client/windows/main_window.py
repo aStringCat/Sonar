@@ -47,9 +47,16 @@ def _format_code_to_html(file_details: dict) -> str:
             user-select: none;
         }
         .line.line-similar {
+            color: red;
             background-color: #E6FFED; /* 浅绿色 */
         }
         .line.line-unique {
+            background-color: #FFEBEE; /* 浅粉色 */
+        }
+        .similar-chunk {
+            background-color: #E6FFED; /* 浅绿色 */
+        }
+        .unique-chunk {
             background-color: #FFEBEE; /* 浅粉色 */
         }
         h3 {
@@ -64,16 +71,27 @@ def _format_code_to_html(file_details: dict) -> str:
     html = f"{styles}<h3>{filename}</h3><pre>"
 
     for line in file_details['lines']:
-        # 将HTML实体转义，并确保空行也能正常显示
-        text = line.get('text', '').replace('<', '&lt;').replace('>', '&gt;') or '&nbsp;'
         line_num = line.get('line_num', '')
-        status = line.get('status', 'unique')
+        # 添加行号
+        html += f"<div><span class='line-number'>{line_num}</span>"
 
-        # 根据状态应用不同的样式类
-        css_class = 'line-similar' if status == 'similar' else 'line-unique'
+        # 遍历处理一行中的每一个文本块 (chunk)
+        for chunk in line.get('chunks', []):
+            text = chunk.get('text', '').replace('<', '&lt;').replace('>', '&gt;')
+            status = chunk.get('status', 'unique')
 
-        # 【关键修复】使用 <div> 标签替代 <span> 来包裹每一行
-        html += f"<div class='line {css_class}'><span class='line-number'>{line_num}</span>{text}</div>"
+            if status == 'similar':
+                # 如果是相似块，用红色span包裹
+                html += f"<span class='similar-chunk'>{text}</span>"
+            else:
+                # 如果是独特块，直接添加文本 (默认黑色)
+                html += f"<span class='unique-chunk'>{text}</span>"
+
+        # 确保空行也能正常显示高度
+        if not line.get('chunks'):
+            html += '&nbsp;'
+
+        html += "</div>"
 
     html += "</pre>"
     return html

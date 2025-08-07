@@ -1,8 +1,9 @@
 import difflib
 import ast
+import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from .schemas import FileDetail, CodeLine
+from .schemas import FileDetail, CodeLine, CodeChunk
 
 
 class AstNormalizer(ast.NodeTransformer):
@@ -59,77 +60,92 @@ def calculate_similarity(code1: str, code2: str) -> float:
 
 
 def generate_detailed_diff(file1_name: str, code1: str, file2_name: str, code2: str) -> dict:
-    def get_normalized_node_map(code):
-        tree = ast.parse(code)
-        node_map = {}
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.For, ast.While, ast.If, ast.With)):
-                # 规范化节点以获得其结构
-                normalized_node = AstNormalizer().visit(node)
-                # 使用 ast.dump 作为该节点结构的“哈希”
-                node_key = ast.dump(normalized_node)
-                # 记录该结构对应的行号范围
-                start_line = node.lineno
-                end_line = getattr(node, 'end_lineno', start_line)
-                if node_key not in node_map:
-                    node_map[node_key] = []
-                node_map[node_key].append((start_line, end_line))
-        return node_map
-
-    try:
-        map1 = get_normalized_node_map(code1)
-        map2 = get_normalized_node_map(code2)
-    except (SyntaxError, Exception):
-        # 如果AST解析失败，则退回到基于文本的diff
-        return _generate_diff_fallback(file1_name, code1, file2_name, code2)
-
-    # 查找两个文件中都存在的相同结构
-    common_keys = set(map1.keys()) & set(map2.keys())
-
-    matched_lines1 = [False] * len(code1.splitlines())
-    for key in common_keys:
-        for start, end in map1[key]:
-            for i in range(start - 1, end):
-                if i < len(matched_lines1):
-                    matched_lines1[i] = True
-
-    matched_lines2 = [False] * len(code2.splitlines())
-    for key in common_keys:
-        for start, end in map2[key]:
-            for i in range(start - 1, end):
-                if i < len(matched_lines2):
-                    matched_lines2[i] = True
-
-    file1_lines = [CodeLine(line_num=i + 1, text=line, status='similar' if matched_lines1[i] else 'unique') for i, line
-                   in enumerate(code1.splitlines())]
-    file2_lines = [CodeLine(line_num=i + 1, text=line, status='similar' if matched_lines2[i] else 'unique') for i, line
-                   in enumerate(code2.splitlines())]
-
-    return {
-        "file1_details": FileDetail(name=file1_name, lines=file1_lines),
-        "file2_details": FileDetail(name=file2_name, lines=file2_lines)
-    }
+    return _generate_diff_fallback(file1_name, code1, file2_name, code2)
 
 
 def _generate_diff_fallback(file1_name: str, code1: str, file2_name: str, code2: str) -> dict:
     code1_lines = code1.splitlines()
     code2_lines = code2.splitlines()
-    matcher = difflib.SequenceMatcher(None, code1_lines, code2_lines, autojunk=False)
+    line_matcher = difflib.SequenceMatcher(None, code1_lines, code2_lines, autojunk=False)
 
-    file1_status = ['unique'] * len(code1_lines)
-    file2_status = ['unique'] * len(code2_lines)
+    file1_details_lines = []
+    file2_details_lines = []
 
-    for block in matcher.get_matching_blocks():
-        if block.size == 0: continue
-        for i in range(block.size):
-            file1_status[block.a + i] = 'similar'
-            file2_status[block.b + i] = 'similar'
+    # 内部函数，对单行进行词语级比较并返回chunks
+    def get_word_diff_chunks(line1, line2):
+        # 使用正则表达式按空白符分割，并保留空白符作为独立的token
+        words1 = re.split(r'(\s+)', line1)
+        words2 = re.split(r'(\s+)', line2)
+        word_matcher = difflib.SequenceMatcher(None, words1, words2)
 
-    file1_details = FileDetail(name=file1_name,
-                               lines=[CodeLine(line_num=i + 1, text=line, status=file1_status[i]) for i, line in
-                                      enumerate(code1_lines)])
-    file2_details = FileDetail(name=file2_name,
-                               lines=[CodeLine(line_num=i + 1, text=line, status=file2_status[i]) for i, line in
-                                      enumerate(code2_lines)])
+        chunks1, chunks2 = [], []
+
+        # 遍历词语级别的差异
+        for word_tag, w_i1, w_i2, w_j1, w_j2 in word_matcher.get_opcodes():
+            text1 = "".join(words1[w_i1:w_i2])
+            text2 = "".join(words2[w_j1:w_j2])
+
+            if word_tag == 'equal':
+                if text1: # 避免添加空块
+                    chunks1.append(CodeChunk(text=text1, status='similar'))
+                    chunks2.append(CodeChunk(text=text2, status='similar'))
+            else: # 'replace', 'delete', 'insert' 均视为 unique
+                if text1:
+                    chunks1.append(CodeChunk(text=text1, status='unique'))
+                if text2:
+                    chunks2.append(CodeChunk(text=text2, status='unique'))
+
+        # 合并相邻的、状态相同的文本块，减少HTML标签数量
+        def merge_chunks(chunks):
+            if not chunks: return [CodeChunk(text="", status='unique')]
+            merged = [chunks[0]]
+            for chunk in chunks[1:]:
+                if chunk.status == merged[-1].status:
+                    merged[-1].text += chunk.text
+                else:
+                    merged.append(chunk)
+            return merged
+
+        return merge_chunks(chunks1), merge_chunks(chunks2)
+
+    # 遍历行级别的差异
+    for tag, i1, i2, j1, j2 in line_matcher.get_opcodes():
+        if tag == 'equal':
+            # 相同的行，所有内容都是 similar
+            for i in range(i1, i2):
+                file1_details_lines.append(CodeLine(line_num=i + 1, chunks=[CodeChunk(text=code1_lines[i], status='similar')]))
+            for j in range(j1, j2):
+                file2_details_lines.append(CodeLine(line_num=j + 1, chunks=[CodeChunk(text=code2_lines[j], status='similar')]))
+
+        elif tag == 'delete':
+            # 只在文件1中存在的行，所有内容都是 unique
+            for i in range(i1, i2):
+                file1_details_lines.append(CodeLine(line_num=i + 1, chunks=[CodeChunk(text=code1_lines[i], status='unique')]))
+
+        elif tag == 'insert':
+            # 只在文件2中存在的行，所有内容都是 unique
+            for j in range(j1, j2):
+                file2_details_lines.append(CodeLine(line_num=j + 1, chunks=[CodeChunk(text=code2_lines[j], status='unique')]))
+
+        elif tag == 'replace':
+            # 两边都存在但内容不同的行，需要进行词语级比较
+            num_pairs = min(i2 - i1, j2 - j1)
+            # 逐行进行词语比较
+            for k in range(num_pairs):
+                chunks1, chunks2 = get_word_diff_chunks(code1_lines[i1 + k], code2_lines[j1 + k])
+                file1_details_lines.append(CodeLine(line_num=i1 + k + 1, chunks=chunks1))
+                file2_details_lines.append(CodeLine(line_num=j1 + k + 1, chunks=chunks2))
+
+            # 处理多余的行（如果替换块的行数不等）
+            if (i2 - i1) > num_pairs: # 文件1多出来的行
+                for k in range(num_pairs, i2 - i1):
+                    file1_details_lines.append(CodeLine(line_num=i1 + k + 1, chunks=[CodeChunk(text=code1_lines[i1+k], status='unique')]))
+            if (j2 - j1) > num_pairs: # 文件2多出来的行
+                for k in range(num_pairs, j2 - j1):
+                    file2_details_lines.append(CodeLine(line_num=j1 + k + 1, chunks=[CodeChunk(text=code2_lines[j1+k], status='unique')]))
+
+
+    file1_details = FileDetail(name=file1_name, lines=file1_details_lines)
+    file2_details = FileDetail(name=file2_name, lines=file2_details_lines)
 
     return {"file1_details": file1_details, "file2_details": file2_details}

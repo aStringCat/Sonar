@@ -2,6 +2,10 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import datetime
 
+class CodeChunk(BaseModel):
+    """字符块，用于高亮显示"""
+    text: str
+    status: str  # 状态可以是 'similar' 或 'unique'
 
 class ComparisonResultItem(BaseModel):
     """单对文件比较结果的摘要"""
@@ -26,8 +30,7 @@ class TaskStatusResponse(BaseModel):
 class CodeLine(BaseModel):
     """带状态的单行代码"""
     line_num: int
-    text: str
-    status: str = Field(..., description="代码行状态: similar, unique")
+    chunks: List[CodeChunk]
 
 
 class FileDetail(BaseModel):
