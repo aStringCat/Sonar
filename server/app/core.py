@@ -74,28 +74,29 @@ def _generate_diff_fallback(file1_name: str, code1: str, file2_name: str, code2:
     # 内部函数，对单行进行词语级比较并返回chunks
     def get_word_diff_chunks(line1, line2):
         # 使用正则表达式按空白符分割，并保留空白符作为独立的token
-        words1 = re.split(r'(\s+)', line1)
-        words2 = re.split(r'(\s+)', line2)
+        words1 = [token for token in re.split(r'(\s+|[^\w\s])', line1) if token]
+        words2 = [token for token in re.split(r'(\s+|[^\w\s])', line2) if token]
+
         word_matcher = difflib.SequenceMatcher(None, words1, words2)
 
         chunks1, chunks2 = [], []
 
-        # 遍历词语级别的差异
+        # 遍历词语级别的差异 (此部分逻辑无需改变)
         for word_tag, w_i1, w_i2, w_j1, w_j2 in word_matcher.get_opcodes():
             text1 = "".join(words1[w_i1:w_i2])
             text2 = "".join(words2[w_j1:w_j2])
 
             if word_tag == 'equal':
-                if text1: # 避免添加空块
+                if text1:
                     chunks1.append(CodeChunk(text=text1, status='similar'))
                     chunks2.append(CodeChunk(text=text2, status='similar'))
-            else: # 'replace', 'delete', 'insert' 均视为 unique
+            else:
                 if text1:
                     chunks1.append(CodeChunk(text=text1, status='unique'))
                 if text2:
                     chunks2.append(CodeChunk(text=text2, status='unique'))
 
-        # 合并相邻的、状态相同的文本块，减少HTML标签数量
+        # 合并相邻块的逻辑也无需改变
         def merge_chunks(chunks):
             if not chunks: return [CodeChunk(text="", status='unique')]
             merged = [chunks[0]]
