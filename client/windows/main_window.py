@@ -46,18 +46,11 @@ def _format_code_to_html(file_details: dict) -> str:
             -webkit-user-select: none; /* 禁止选择行号 */
             user-select: none;
         }
-        .line.line-similar {
-            color: red;
-            background-color: #E6FFED; /* 浅绿色 */
-        }
-        .line.line-unique {
-            background-color: #FFEBEE; /* 浅粉色 */
-        }
         .similar-chunk {
-            background-color: #E6FFED; /* 浅绿色 */
+            background-color: #FFEBEE; /* 浅粉色 */
         }
         .unique-chunk {
-            background-color: #FFEBEE; /* 浅粉色 */
+            background-color: #E6FFED; /* 浅绿色 */
         }
         h3 {
             font-family: sans-serif;
