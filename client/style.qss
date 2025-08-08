@@ -3,11 +3,40 @@
     background-color: transparent;
 }
 
-/*
- * 第二步：为你真正的最外层容器（那个名为 frame 的 QFrame）设置背景色和圆角。
- * 现在，由于底板是透明的，frame 的圆角就能完美地呈现为整个窗口的圆角。
-*/
 #frame {
-    background-color: #2E2F33; /* 你想要的窗口主背景色 */
-    border-radius: 10px;       /* 你想要的圆角弧度 */
+    background-color: #2E2F33;
+    border-radius: 10px;
 }
+
+#main_stack QDoubleSpinBox {
+    background-color: #FFFFFF;
+    color: #333333;
+    border: 1px solid #C0C0C0;
+    border-radius: 4px;
+    padding: 6px;
+}
+
+#main_stack QDoubleSpinBox:focus {
+    border: 1px solid #3498DB;
+}
+
+#main_stack QDoubleSpinBox::up-button,
+#main_stack QDoubleSpinBox::down-button {
+    subcontrol-origin: border;
+
+    width: 18px;
+}
+
+#main_stack QDoubleSpinBox::up-button:hover,
+#main_stack QDoubleSpinBox::down-button:hover {
+//考虑下加不加
+}
+
+#main_stack QDoubleSpinBox::up-button {
+    border-top-right-radius: 10px;
+}
+
+#main_stack QDoubleSpinBox::down-button {
+    border-bottom-right-radius: 10px;
+}
+
