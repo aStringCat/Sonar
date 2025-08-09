@@ -1,7 +1,9 @@
 import datetime
 import os
 import json
-
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import HtmlFormatter
 import qtawesome as qta
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import QThread, pyqtSlot, Qt, QTimer
@@ -15,16 +17,26 @@ from client.windows.graph_window import GraphWindow
 
 
 def _format_code_to_html(file_details: dict) -> str:
+
     if not file_details or 'lines' not in file_details:
         return "<pre><code>无法加载代码。</code></pre>"
 
     filename = file_details.get('name', 'Unknown File')
 
-    # 定义新的CSS样式
+    full_code = "".join(
+        "".join(chunk.get('text', '') for chunk in line.get('chunks', [])) + "\n"
+        for line in file_details.get('lines', [])
+    )
+
+    formatter = HtmlFormatter(style='default', noclasses=True, nobackground=True)
+    highlighted_code_html = highlight(full_code, PythonLexer(), formatter)
+
+    highlighted_lines = highlighted_code_html.strip().split('\n')
+
     styles = """
     <style>
         pre {
-            background-color: #F7F7F7; /* 代码块背景色 */
+            background-color: #F7F7F7; /* 代码块背景色 - 保持浅色 */
             border: 1px solid #E0E0E0;
             padding: 10px;
             border-radius: 5px;
@@ -32,26 +44,39 @@ def _format_code_to_html(file_details: dict) -> str:
             font-size: 14px;
             line-height: 1.5;
             margin: 0;
-            white-space: pre-wrap; /* 允许自动换行长代码 */
+            white-space: pre-wrap;
+            
+            /* 【关键修正】将默认文字颜色改为深灰色（黑色）*/
+            color: #333333; 
         }
+
+        /* 确保空行也有高度 (这条规则不变) */
         .line {
-            min-height: 1.5em; /* 确保空行也有高度 */
+            min-height: 1.5em;
         }
+
+        /* 行号的样式 (这条规则不变) */
         .line-number {
             display: inline-block;
             width: 40px;
             color: #999;
             text-align: right;
             padding-right: 10px;
-            -webkit-user-select: none; /* 禁止选择行号 */
+            -webkit-user-select: none;
             user-select: none;
         }
+
+        /* 相似代码块的背景高亮 (这条规则不变) */
         .similar-chunk {
             background-color: #FFEBEE; /* 浅粉色 */
         }
+
+        /* 独特代码块的背景高亮 (这条规则不变) */
         .unique-chunk {
             background-color: #E6FFED; /* 浅绿色 */
         }
+
+        /* 文件名标题的样式 (这条规则不变) */
         h3 {
             font-family: sans-serif;
             color: #333;
@@ -63,33 +88,28 @@ def _format_code_to_html(file_details: dict) -> str:
 
     html = f"{styles}<h3>{filename}</h3><pre>"
 
-    for line in file_details['lines']:
-        line_num = line.get('line_num', '')
-        # 添加行号
+    pygments_line_index = 0
+    for line_data in file_details.get('lines', []):
+        line_num = line_data.get('line_num', '')
         html += f"<div><span class='line-number'>{line_num}</span>"
 
-        # 遍历处理一行中的每一个文本块 (chunk)
-        for chunk in line.get('chunks', []):
-            text = chunk.get('text', '').replace('<', '&lt;').replace('>', '&gt;')
-            status = chunk.get('status', 'unique')
+        if pygments_line_index < len(highlighted_lines):
+            pygments_line_html = highlighted_lines[pygments_line_index]
 
-            if status == 'similar':
-                # 如果是相似块，用红色span包裹
-                html += f"<span class='similar-chunk'>{text}</span>"
+
+            chunks = line_data.get('chunks', [])
+            is_similar = any(chunk.get('status') == 'similar' for chunk in chunks)
+
+            if is_similar:
+                html += f"<span class='similar-chunk'>{pygments_line_html}</span>"
             else:
-                # 如果是独特块，直接添加文本 (默认黑色)
-                html += f"<span class='unique-chunk'>{text}</span>"  # 有色
-                # html += text  # 无色
-
-        # 确保空行也能正常显示高度
-        if not line.get('chunks'):
-            html += '&nbsp;'
+                html += f"<span class='unique-chunk'>{pygments_line_html}</span>"
 
         html += "</div>"
+        pygments_line_index += 1
 
     html += "</pre>"
     return html
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -125,7 +145,8 @@ class MainWindow(QMainWindow):
 
         self._setup_window_icons()
         self.load_initial_threshold()
-
+        self._setup_widget_styles()
+        self.ui.main_stack.setCurrentIndex(0)
     def _setup_new_ui_elements(self):
         """初始化新增的UI控件。"""
         self.threshold_label = QtWidgets.QLabel("相似度阈值:", self.ui.page)
@@ -151,6 +172,7 @@ class MainWindow(QMainWindow):
             page_layout.insertLayout(2, new_controls_layout)
 
         self.history_table: QTableWidget = QTableWidget()
+        self.history_table.setObjectName("history_table")
         existing_layout = self.ui.page_3.layout()
         if existing_layout is not None:
             while existing_layout.count():
@@ -181,7 +203,6 @@ class MainWindow(QMainWindow):
         self.ui.btn_select_folder_3.clicked.connect(self.select_one_to_many_directory)
         self.ui.btn_start_analysis_mode1.clicked.connect(self.start_analysis)
         self.ui.btn_start_analysis_mode2.clicked.connect(self.start_analysis)
-        self.ui.home.clicked.connect(self.go_to_home_page)
         self.ui.btn_back.clicked.connect(self.go_to_home_page)
         self.ui.pushButton_7.clicked.connect(self.go_to_home_page)
         self.ui.pushButton_3.clicked.connect(self.show_history_page)
@@ -509,3 +530,90 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_4.setIcon(qta.icon('fa5s.window-minimize', color='#A3A4A8'))
         self.ui.pushButton_6.setIcon(qta.icon('fa5s.times', color='#A3A4A8'))
         self.ui.pushButton_5.setIcon(qta.icon('fa5s.window-maximize', color='#A3A4A8'))
+
+    def _setup_widget_styles(self):
+        table_history_style = """
+               #table_history {
+                   background-color: #FFFFFF;
+                   color: #333333;
+                   border: 1px solid #E0E0E0;
+                   gridline-color: #F0F0F0;
+                   alternate-background-color: #F9F9F9;
+                   selection-background-color: #D0E4F5;
+                   selection-color: #333333;
+               }
+               #table_history QHeaderView::section {
+                   background-color: #F5F5F5;
+                   color: #333333;
+                   padding: 8px;
+                   border: none;
+                   border-bottom: 1px solid #E0E0E0;
+                   font-weight: bold;
+               }
+               #table_history::item {
+                   border-bottom: 1px solid #F0F0F0;
+                   padding: 8px;
+               }
+               #table_history QScrollBar:vertical {
+                   border: none;
+                   background: #F5F5F5;
+                   width: 10px;
+                   margin: 0;
+               }
+               #table_history QScrollBar::handle:vertical {
+                   background: #DCDCDC;
+                   min-height: 20px;
+                   border-radius: 5px;
+               }
+               #table_history QScrollBar::handle:vertical:hover {
+                   background: #C8C8C8;
+               }
+               #table_history QScrollBar::add-line:vertical, 
+               #table_history QScrollBar::sub-line:vertical {
+                   height: 0px;
+               }
+           """
+        self.ui.table_history.setStyleSheet(table_history_style)
+
+        history_table_style = """
+                   #history_table {
+                       background-color: #FFFFFF;
+                       color: #333333;
+                       border: 1px solid #E0E0E0;
+                       gridline-color: #F0F0F0;
+                       alternate-background-color: #F9F9F9;
+                       selection-background-color: #D0E4F5;
+                       selection-color: #333333;
+                   }
+                   #history_table QHeaderView::section {
+                       background-color: #F5F5F5;
+                       color: #333333;
+                       padding: 8px;
+                       border: none;
+                       border-bottom: 1px solid #E0E0E0;
+                       font-weight: bold;
+                   }
+                   #history_table::item {
+                       border-bottom: 1px solid #F0F0F0;
+                       padding: 8px;
+                   }
+                   #history_table QScrollBar:vertical {
+                       border: none;
+                       background: #F5F5F5;
+                       width: 10px;
+                       margin: 0;
+                   }
+                   #history_table QScrollBar::handle:vertical {
+                       background: #DCDCDC;
+                       min-height: 20px;
+                       border-radius: 5px;
+                   }
+                   #history_table QScrollBar::handle:vertical:hover {
+                       background: #C8C8C8;
+                   }
+                   #history_table QScrollBar::add-line:vertical, 
+                   #history_table QScrollBar::sub-line:vertical {
+                       height: 0px;
+                   }
+               """
+        self.history_table.setStyleSheet(history_table_style)
